@@ -1,1 +1,1 @@
-# Lenos-IA
+# Projeto de graduação da Fatec Franca.
