@@ -1,9 +1,14 @@
+from typing import TYPE_CHECKING
 from utils.database import Base
 from uuid import UUID, uuid4
 from datetime import datetime
 from sqlalchemy import DateTime, String, func
 from sqlalchemy.dialects.postgresql import UUID as PG_UUID
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+
+if TYPE_CHECKING:
+    from .analyses import Analyse
+    from .answers import Answer
 
 
 class User (Base):
@@ -23,3 +28,6 @@ class User (Base):
         server_default = func.now(),
         onupdate = func.now(),
         nullable = False)
+    
+    analyses: Mapped[list["Analyse"]] = relationship(back_populates = "user", lazy = "subquery")
+    answers: Mapped[list["Answer"]] = relationship(back_populates = "user", lazy = "subquery")
