@@ -19,7 +19,11 @@ class Analyse (Base):
     user_id: Mapped[UUID] = mapped_column(PG_UUID(as_uuid = True), ForeignKey("users.id"), nullable = False)
     video_url: Mapped[str] = mapped_column(String, nullable = False)
     youtube_video_id: Mapped[str] = mapped_column(String, nullable = False)
-    status: Mapped[str] = mapped_column(Enum("pending", "done", "failed"), nullable = False, server_default = "pending")
+    status: Mapped[str] = mapped_column(
+        Enum("pending", "done", "failed", name = "analysis_status"),
+        nullable = False,
+        server_default = "pending",
+    )
     request_at: Mapped[datetime] = mapped_column(DateTime(timezone = True), server_default = func.now(), nullable = False)
     finished_at: Mapped[datetime | None] = mapped_column(DateTime(timezone = True), nullable = True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone = True), server_default = func.now(), nullable = False)
