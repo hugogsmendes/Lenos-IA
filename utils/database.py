@@ -15,7 +15,7 @@ SessionLocal = sessionmaker(bind = engine)
 
 if __name__ == "__main__":
 
-    def test_connect ():
+    def test_connect():
 
         try:
             with engine.connect() as connection:
