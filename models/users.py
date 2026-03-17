@@ -18,6 +18,7 @@ class User (Base):
     id: Mapped[UUID] = mapped_column(PG_UUID(as_uuid = True), primary_key = True, default = uuid4)
     name: Mapped[str] = mapped_column(String, nullable = False)
     email: Mapped[str] = mapped_column(String, nullable = False, unique = True)
+    phone: Mapped[str] = mapped_column(String, nullable = False, unique = True)
     password_hash: Mapped[str] = mapped_column(String, nullable = False)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone = True),
