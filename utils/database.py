@@ -6,7 +6,7 @@ import asyncio
 
 load_dotenv()
 
-DATABASE_URL = os.getenv("DATABASE_URL")
+DATABASE_URL = os.getenv("DATABASE_URL_ASYNC")
                     
 engine = create_async_engine(DATABASE_URL,
                              pool_pre_ping = True,
