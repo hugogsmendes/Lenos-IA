@@ -25,3 +25,9 @@ class Unauthorized (HTTPException):
     def __init__(self, detail: str = "Não autentificado"):
         self.detail = detail
         super().__init__(status_code=status.HTTP_401_UNAUTHORIZED, detail=self.detail)
+
+class BadRequest (HTTPException):
+
+    def __init__(self, detail: str = "Erro de requisição"):
+        self.detail = detail
+        super().__init__(status_code=status.HTTP_400_BAD_REQUEST, detail=self.detail)
