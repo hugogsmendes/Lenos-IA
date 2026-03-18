@@ -1,6 +1,7 @@
 from dotenv import load_dotenv
 import os
 from argon2 import PasswordHasher
+from argon2.exceptions import VerificationError
 import jwt
 from datetime import datetime, timedelta, timezone
 
@@ -22,13 +23,16 @@ def hash_password (password: str):
 def verify_password (hashed_password: str, password: str):
     if PEPPER:
         password_pepper = password + PEPPER
-    return argon.verify(hashed_password, password_pepper) if PEPPER else argon.verify(hashed_password, password)
+    try:
+        return argon.verify(hashed_password, password_pepper) if PEPPER else argon.verify(hashed_password, password)
+    except VerificationError:
+        return False
 
 def create_access_token (user_id, name, email, token_duration = timedelta(seconds = ACCESS_TOKEN_EXPIRE)):
     expire = datetime.now(timezone.utc) + token_duration
 
     payload = {
-        "sub": user_id,
+        "sub": str(user_id),
         "name": name,
         "email": email,
         "exp": expire,
@@ -42,7 +46,7 @@ def create_refresh_token (user_id, name, email, token_duration = timedelta(secon
     expire = datetime.now(timezone.utc) + token_duration
 
     payload = {
-        "sub": user_id,
+        "sub": str(user_id),
         "name": name,
         "email": email,
         "exp": expire,
