@@ -2,7 +2,8 @@ from pydantic import BaseModel, ConfigDict, EmailStr, field_validator
 import re
 from datetime import datetime
 
-class RegisterUser(BaseModel):
+class RegisterUser (BaseModel):
+
     model_config = ConfigDict(from_attributes = True)
 
     name: str
@@ -26,7 +27,16 @@ class RegisterUser(BaseModel):
 
         return value
     
-class ResponseUser(BaseModel):
+class LoginUser (BaseModel):
+
+    model_config = ConfigDict(from_attributes = True)
+
+    email: EmailStr
+    password: str
+    
+class ResponseUser (BaseModel):
+
+    model_config = ConfigDict(from_attributes = True)
 
     name: str
     email: EmailStr
