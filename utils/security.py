@@ -1,7 +1,17 @@
+from dotenv import load_dotenv
 import os
 from argon2 import PasswordHasher
+import jwt
+from datetime import datetime, timedelta, timezone
+
+load_dotenv()
 
 PEPPER = str(os.getenv("pepper"))
+SECRET_KEY = os.getenv("SECRET_KEY")
+ALGORITHM = os.getenv("ALGORITHM")
+ACCESS_TOKEN_EXPIRE = 3600
+REFRESH_TOKEN_EXPIRE = 604800
+
 argon = PasswordHasher()
 
 def hash_password (password: str):
@@ -14,6 +24,49 @@ def verify_password (hashed_password: str, password: str):
         password_pepper = password + PEPPER
     return argon.verify(hashed_password, password_pepper) if PEPPER else argon.verify(hashed_password, password)
 
+def create_access_token (user_id, name, email, token_duration = timedelta(seconds = ACCESS_TOKEN_EXPIRE)):
+    expire = datetime.now(timezone.utc) + token_duration
+
+    payload = {
+        "sub": user_id,
+        "name": name,
+        "email": email,
+        "exp": expire,
+        "type": "access"
+    }
+
+    encoded_jwt = jwt.encode(payload, SECRET_KEY, algorithm = ALGORITHM)
+    return encoded_jwt
+
+def create_refresh_token (user_id, name, email, token_duration = timedelta(seconds = REFRESH_TOKEN_EXPIRE)):
+    expire = datetime.now(timezone.utc) + token_duration
+
+    payload = {
+        "sub": user_id,
+        "name": name,
+        "email": email,
+        "exp": expire,
+        "type": "refresh"
+    }
+
+    encoded_jwt = jwt.encode(payload, SECRET_KEY, algorithm = ALGORITHM)
+    return encoded_jwt
+
+def verify_token_jwt (token_jwt: str, expected_type: str | None = None):
+
+    try:
+        payload = jwt.decode(token_jwt, SECRET_KEY, algorithms = [ALGORITHM])
+
+        if expected_type and payload.get("type") != expected_type:
+            return None
+
+        return payload
+
+    except jwt.InvalidTokenError:
+        return None
+
 if __name__ == "__main__":
     hashed_password = hash_password("Teste2025@fatec")
     assert verify_password(hashed_password, "Teste2025@fatec") is True
+    token = create_access_token("ahjsha88912048", "Hugo", "hugogs.mendes@gmail.com")
+    assert verify_token_jwt(token, "access") is not None
