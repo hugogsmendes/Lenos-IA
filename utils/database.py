@@ -12,8 +12,7 @@ DATABASE_URL = os.getenv("DATABASE_URL_ASYNC")
 engine = create_async_engine(DATABASE_URL,
                              pool_pre_ping = True,
                              echo = True, # False em produção
-                             poolclass = NullPool,
-                             connect_args = {"statement_cache_size": 0},)
+                             poolclass = NullPool)
 
 
 Base = declarative_base() 
