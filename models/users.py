@@ -20,6 +20,7 @@ class User (Base):
     email: Mapped[str] = mapped_column(String, nullable = False, unique = True)
     phone: Mapped[str] = mapped_column(String, nullable = False, unique = True)
     password_hash: Mapped[str] = mapped_column(String, nullable = False)
+    image_url: Mapped[str] = mapped_column(String, nullable = True, unique = True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone = True),
         server_default = func.now(),
