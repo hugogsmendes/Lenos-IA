@@ -7,10 +7,7 @@ from service.user_service import User_Service
 
 async def get_session() -> AsyncGenerator[AsyncSession, None]:
     async with SessionLocal() as session:
-        try:
-            yield session
-        finally:
-            await session.close()
+        yield session        
 
 def get_user_repository(session: AsyncSession = Depends(get_session)):
     return User_Repository(session = session)
