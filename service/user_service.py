@@ -1,8 +1,9 @@
 from repository.user_repository import User_Repository
 from utils.schemas import RegisterUser, LoginUser
 from utils.exceptions import RegisterExistsError, BadRequest, RegisterNotFoundError, Unauthorized
-from utils.security import verify_password, create_access_token, create_refresh_token
-from fastapi import HTTPException
+from utils.security import verify_password, create_access_token, create_refresh_token, verify_token_jwt
+from fastapi import HTTPException, Request
+
 
 
 class User_Service:
@@ -49,3 +50,25 @@ class User_Service:
             raise
         except Exception:
             raise BadRequest
+        
+    async def refresh (self, request: Request):
+
+        try:
+            payload = verify_token_jwt(request.cookies.get("refresh_token"), "refresh")
+            if not payload:
+                raise Unauthorized(detail = "Token inválido")
+            
+            user = await self.repository.get_user_by_email(payload.get("email"))
+
+            access_token = create_access_token(user.id, user.name, user.email)
+
+            return {
+                "access_token": access_token,
+                "type": "Bearer"
+            }
+            
+        except HTTPException:
+            raise
+        except Exception:
+            raise BadRequest
+
