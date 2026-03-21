@@ -50,3 +50,16 @@ class UpdateUser (BaseModel):
     name: str | None = None
     email: EmailStr | None = None
     phone: str | None = None
+
+class CreateQuestion (BaseModel):
+
+    model_config = ConfigDict(from_attributes = True)
+
+    description: str
+
+class ResponseQuestion (BaseModel):
+
+    model_config = ConfigDict(from_attributes = True)
+
+    description: str
+    answers: list
