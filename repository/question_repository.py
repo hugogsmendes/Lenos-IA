@@ -1,4 +1,5 @@
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
 from models.questions import Question
 
 class Question_Repository:
@@ -15,3 +16,11 @@ class Question_Repository:
         await self.session.refresh(new_question)
 
         return new_question
+    
+    async def get_question_by_description (self, description: str) -> Question:
+
+        query = select(Question).filter(Question.description == description)
+
+        result = await self.session.execute(query)
+
+        return result.scalar_one_or_none()

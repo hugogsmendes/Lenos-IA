@@ -63,3 +63,10 @@ class ResponseQuestion (BaseModel):
 
     description: str
     answers: list
+
+class AnswerQuestion (BaseModel):
+
+    model_config = ConfigDict(from_attributes = True)
+
+    question: str
+    answer: str

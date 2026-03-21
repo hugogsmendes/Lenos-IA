@@ -1,4 +1,6 @@
 from repository.question_repository import Question_Repository
+from fastapi import HTTPException
+from utils.exceptions import BadRequest
 
 class Question_Service:
 
@@ -6,5 +8,10 @@ class Question_Service:
         self.repository = repository
 
     async def create_question (self, description: str):
+        try:
+            return await self.repository.create_question(description)
 
-        return await self.repository.create_question(description)
+        except HTTPException:
+            raise
+        except Exception:
+            raise BadRequest
