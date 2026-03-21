@@ -1,6 +1,9 @@
 from fastapi import FastAPI
 
-app = FastAPI()
+app = FastAPI(
+    title = "Lenos IA",
+    version = "1.0.0"
+)
 
 from api.routes.user_routes import user_router
 from api.routes.question_routes import question_router
