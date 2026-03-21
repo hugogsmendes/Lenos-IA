@@ -10,8 +10,8 @@ load_dotenv()
 PEPPER = str(os.getenv("pepper"))
 SECRET_KEY = os.getenv("SECRET_KEY")
 ALGORITHM = os.getenv("ALGORITHM")
-ACCESS_TOKEN_EXPIRE = 3600
-REFRESH_TOKEN_EXPIRE = 604800
+ACCESS_TOKEN_EXPIRE = int(os.getenv("ACCESS_TOKEN_EXPIRE"))
+REFRESH_TOKEN_EXPIRE = int(os.getenv("REFRESH_TOKEN_EXPIRE"))
 
 argon = PasswordHasher()
 
