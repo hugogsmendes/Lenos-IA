@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, status, Response, Request
 from utils.schemas import ResponseUser, RegisterUser, LoginUser
 from service.user_service import User_Service
-from sessions.dependencies import get_user_service
+from sessions.dependencies import get_user_service, get_current_user
 from utils.cookies import clear_auth_cookies, set_access_cookie, set_refresh_cookie
 
 user_router = APIRouter(prefix = "/v1", tags = ["user"])
@@ -19,9 +19,9 @@ async def login (response: Response, body: LoginUser, service: User_Service = De
     return {"message": "Login realizado com sucesso."}
 
 @user_router.post(path = "/logout", status_code = status.HTTP_200_OK)
-def logout (response: Response):
+async def logout (response: Response, current_user: dict = Depends(get_current_user)):
     clear_auth_cookies(response)
-    
+
     return {"message": "Logout realizado com sucesso."}
 
 @user_router.post(path = "/refresh", status_code = status.HTTP_200_OK)
