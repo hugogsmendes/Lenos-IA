@@ -1,5 +1,5 @@
 from repository.user_repository import User_Repository
-from utils.schemas import RegisterUser, LoginUser
+from utils.schemas import RegisterUser, LoginUser, UpdateUser
 from utils.exceptions import RegisterExistsError, BadRequest, RegisterNotFoundError, Unauthorized
 from utils.security import verify_password, create_access_token, create_refresh_token, verify_token_jwt
 from fastapi import HTTPException, Request
@@ -67,6 +67,33 @@ class User_Service:
                 "type": "Bearer"
             }
             
+        except HTTPException:
+            raise
+        except Exception:
+            raise BadRequest
+        
+    async def update_user (self, schema: UpdateUser, email: str) -> None:
+
+        try:
+
+            exists_user = await self.repository.get_user_by_email(schema.email)
+
+            if exists_user:
+                raise RegisterExistsError(register = schema.email)
+            
+            user = await self.repository.get_user_by_email(email)
+        
+            update_user = await self.repository.update_user(schema, user)
+
+            access_token = create_access_token(update_user.id, update_user.name, update_user.email)
+            refresh_token = create_refresh_token(update_user.id, update_user.name, update_user.email)
+
+            return {
+                "access_token": access_token,
+                "refresh_token": refresh_token,
+                "type": "Bearer"
+            }
+        
         except HTTPException:
             raise
         except Exception:

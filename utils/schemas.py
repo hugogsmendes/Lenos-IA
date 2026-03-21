@@ -42,3 +42,11 @@ class ResponseUser (BaseModel):
     email: EmailStr
     phone: str
     created_at: datetime
+
+class UpdateUser (BaseModel):
+
+    model_config = ConfigDict(from_attributes = True)
+
+    name: str | None = None
+    email: EmailStr | None = None
+    phone: str | None = None

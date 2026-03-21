@@ -1,7 +1,7 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from models.users import User
-from utils.schemas import RegisterUser
+from utils.schemas import RegisterUser, UpdateUser
 from utils.security import hash_password
 
 class User_Repository:
@@ -17,7 +17,7 @@ class User_Repository:
 
         return result.scalar_one_or_none()
     
-    async def create_user (self, schema: RegisterUser):
+    async def create_user (self, schema: RegisterUser) -> User:
 
         new_user = User(name = schema.name,
                         email = schema.email,
@@ -29,3 +29,12 @@ class User_Repository:
         await self.session.refresh(new_user)
 
         return new_user
+    
+    async def update_user (self, schema: UpdateUser, user: User) -> User:
+        
+        user.name = schema.name
+        user.email = schema.email
+        user.phone = schema.phone
+        await self.session.commit()
+        await self.session.refresh(user)
+        return user

@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, status, Response, Request
-from utils.schemas import ResponseUser, RegisterUser, LoginUser
+from utils.schemas import ResponseUser, RegisterUser, LoginUser, UpdateUser
 from service.user_service import User_Service
 from sessions.dependencies import get_user_service, get_current_user
 from utils.cookies import clear_auth_cookies, set_access_cookie, set_refresh_cookie
@@ -30,3 +30,14 @@ async def refresh (request: Request, response: Response, service: User_Service =
     set_access_cookie(response, res.get("access_token"))
 
     return {"message": "Refresh realizado com sucesso"}
+
+@user_router.get(path = "/me", status_code = status.HTTP_200_OK, response_model = ResponseUser)
+async def me (current_user = Depends(get_current_user)):
+    return current_user
+
+@user_router.put(path = "/user-update", status_code = status.HTTP_204_NO_CONTENT)
+async def update_user (response: Response, body: UpdateUser, service: User_Service = Depends(get_user_service), 
+                       current_user = Depends(get_current_user)):
+    res = await service.update_user(body, getattr(current_user, "email", None))
+    set_access_cookie(response, res.get("access_token"))
+    set_refresh_cookie(response, res.get("refresh_token"))
