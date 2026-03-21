@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, status
-from utils.schemas import ResponseQuestion, CreateQuestion
+from utils.schemas import ResponseQuestion, CreateQuestion, ResponseQuestionsByUser
 from service.question_service import Question_Service
 from sessions.dependencies import get_question_service, get_current_user
 
@@ -9,3 +9,8 @@ question_router = APIRouter(prefix = "/v1", tags = ["question"])
 async def create_question(body: CreateQuestion, service: Question_Service = Depends(get_question_service),
                           current_user = Depends(get_current_user)):
     return await service.create_question(body.description)
+
+@question_router.get(path = "/user/answers-questions", status_code = status.HTTP_200_OK, response_model = list[ResponseQuestionsByUser])
+async def get_questions_by_user(service: Question_Service = Depends(get_question_service),
+                         current_user = Depends(get_current_user)):
+    return await service.get_questions_by_user(getattr(current_user, "id", None))

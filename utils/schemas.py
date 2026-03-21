@@ -70,3 +70,16 @@ class AnswerQuestion (BaseModel):
 
     question: str
     answer: str
+
+class ResponseAnswerQuestion (BaseModel):
+
+    answer: str
+    user: ResponseUser
+
+
+class ResponseQuestionsByUser(BaseModel):
+
+    model_config = ConfigDict(from_attributes = True)
+
+    question: str
+    answer: str

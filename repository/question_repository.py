@@ -1,6 +1,7 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from models.questions import Question
+from models.answers import Answer
 
 class Question_Repository:
 
@@ -24,3 +25,11 @@ class Question_Repository:
         result = await self.session.execute(query)
 
         return result.scalar_one_or_none()
+    
+    async def get_questions_by_user (self, user_id):
+        
+        query = select(Question, Answer).join(Question.answers).filter(Answer.user_id == user_id)
+
+        result = await self.session.execute(query)
+
+        return result.all()
