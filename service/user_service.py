@@ -1,5 +1,5 @@
 from repository.user_repository import User_Repository
-from utils.schemas import RegisterUser, LoginUser, UpdateUser
+from utils.schemas import RegisterUser, LoginUser, UpdateUser, UpdatePasswordUser
 from utils.exceptions import RegisterExistsError, BadRequest, RegisterNotFoundError, Unauthorized
 from utils.security import verify_password, create_access_token, create_refresh_token, verify_token_jwt
 from fastapi import HTTPException, Request
@@ -72,7 +72,7 @@ class User_Service:
         except Exception:
             raise BadRequest
         
-    async def update_user (self, schema: UpdateUser, email: str) -> None:
+    async def update_user (self, schema: UpdateUser, email: str):
 
         try:
 
@@ -94,6 +94,21 @@ class User_Service:
                 "type": "Bearer"
             }
         
+        except HTTPException:
+            raise
+        except Exception:
+            raise BadRequest
+        
+    async def update_password(self, schema: UpdatePasswordUser, email: str):
+
+        try:
+            user = await self.repository.get_user_by_email(email)
+
+            if not verify_password(user.password_hash, schema.current_password):
+                raise Unauthorized(detail = "Credencias inválidas")
+            
+            return await self.repository.update_password(schema.new_password, user)
+
         except HTTPException:
             raise
         except Exception:
