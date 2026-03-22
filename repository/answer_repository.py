@@ -1,5 +1,6 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from models.answers import Answer
+from sqlalchemy import select
 
 class Answer_Repository:
 
@@ -16,3 +17,18 @@ class Answer_Repository:
         await self.session.refresh(new_anser)
 
         return new_anser
+    
+    async def get_answer_by_user (self, user_id, questions_id) -> Answer:
+
+        query = select(Answer).filter((Answer.user_id == user_id) & (Answer.questions_id == questions_id))
+
+        result = await self.session.execute(query)
+
+        return result.scalar_one_or_none()
+    
+    async def update_answer (self, new_answer: str, answer: Answer) -> None:
+
+        answer.answer = new_answer
+        await self.session.commit()
+        await self.session.refresh(answer)
+

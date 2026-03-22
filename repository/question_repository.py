@@ -26,7 +26,7 @@ class Question_Repository:
 
         return result.scalar_one_or_none()
     
-    async def get_questions_by_user (self, user_id):
+    async def get_questions_by_user (self, user_id) -> list[(Question, Answer)]:
         
         query = select(Question, Answer).join(Question.answers).filter(Answer.user_id == user_id)
 

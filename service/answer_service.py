@@ -18,3 +18,14 @@ class Answer_Service:
             raise
         except Exception:
             raise BadRequest
+        
+    async def update_answer (self, new_answer: str, user_id, questions_id):
+        try:
+            
+            answer = await self.repository.get_answer_by_user(user_id, questions_id)
+            return await self.repository.update_answer(new_answer, answer)
+
+        except HTTPException:
+            raise
+        except Exception:
+            raise BadRequest

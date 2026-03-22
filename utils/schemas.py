@@ -85,7 +85,6 @@ class ResponseQuestion (BaseModel):
     model_config = ConfigDict(from_attributes = True)
 
     description: str
-    answers: list
 
 class AnswerQuestion (BaseModel):
 
@@ -96,9 +95,9 @@ class AnswerQuestion (BaseModel):
 
 class ResponseAnswerQuestion (BaseModel):
 
+    question: ResponseQuestion
     answer: str
     user: ResponseUser
-
 
 class ResponseQuestionsByUser(BaseModel):
 
@@ -106,3 +105,10 @@ class ResponseQuestionsByUser(BaseModel):
 
     question: str
     answer: str
+
+class UpdateAnswer (BaseModel):
+
+    model_config = ConfigDict(from_attributes = True)
+
+    question: str
+    new_answer: str
