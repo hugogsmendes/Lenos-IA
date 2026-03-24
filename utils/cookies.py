@@ -17,7 +17,7 @@ def _cookie_kwargs(duration: int) -> dict:
         "httponly": True,
         "secure": True,
         "max_age": duration,
-        "path": "/api",
+        "path": "/v1",
         "samesite": COOKIE_SAMESITE,
         "domain": COOKIE_DOMAIN,
     }
@@ -41,13 +41,13 @@ def set_refresh_cookie(response: Response, token: str) -> None:
 def clear_auth_cookies(response: Response) -> None:
     response.delete_cookie(
         key = ACCESS_COOKIE_NAME,
-        path = "/api",
+        path = "/v1",
         samesite = COOKIE_SAMESITE,
         domain = COOKIE_DOMAIN,
     )
     response.delete_cookie(
         key = REFRESH_COOKIE_NAME,
-        path = "/api",
+        path = "/v1",
         samesite = COOKIE_SAMESITE,
         domain = COOKIE_DOMAIN,
     )
