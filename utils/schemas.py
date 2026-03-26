@@ -1,20 +1,47 @@
-from pydantic import BaseModel, ConfigDict, EmailStr, field_validator
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
 import re
 from datetime import datetime
 
+MAX_NAME_LENGTH = 100
+MAX_EMAIL_LENGTH = 200
+MIN_PHONE_LENGTH = 8
+MAX_PHONE_LENGTH = 20
+MIN_PASSWORD_LENGTH = 8
+MAX_PASSWORD_LENGTH = 20
+MAX_QUESTION_LENGTH = 100
+MAX_ANSWER_LENGTH = 100
+
 class RegisterUser (BaseModel):
 
-    model_config = ConfigDict(from_attributes = True)
+    model_config = ConfigDict(from_attributes = True, str_strip_whitespace = True)
 
-    name: str
-    email: EmailStr
-    phone: str
-    password: str
+    name: str = Field(..., min_length = 2, max_length = MAX_NAME_LENGTH)
+    email: EmailStr = Field(..., max_length = MAX_EMAIL_LENGTH)
+    phone: str = Field(..., min_length = MIN_PHONE_LENGTH, max_length = MAX_PHONE_LENGTH)
+    password: str = Field(..., min_length = MIN_PASSWORD_LENGTH, max_length = MAX_PASSWORD_LENGTH)
+
+    @field_validator("name")
+    @classmethod
+    def validate_name(cls, value: str) -> str:
+        if not value.strip():
+            raise ValueError("Nome nao pode ser vazio.")
+
+        return value
+
+    @field_validator("phone")
+    @classmethod
+    def validate_phone(cls, value: str) -> str:
+        if not value.strip():
+            raise ValueError("Telefone nao pode ser vazio.")
+        if not re.fullmatch(r"\+?[0-9]{8,20}", value):
+            raise ValueError("Telefone deve conter apenas numeros e opcional '+' no inicio.")
+
+        return value
 
     @field_validator("password")
     @classmethod
     def validate_password(cls, value: str) -> str:
-        if len(value) < 8:
+        if len(value) < MIN_PASSWORD_LENGTH:
             raise ValueError("A senha deve conter no minimo 8 caracteres.")
         if not re.search(r"[a-z]", value):
             raise ValueError("A senha deve conter pelo menos 1 letra minuscula.")
@@ -29,10 +56,10 @@ class RegisterUser (BaseModel):
     
 class LoginUser (BaseModel):
 
-    model_config = ConfigDict(from_attributes = True)
+    model_config = ConfigDict(from_attributes = True, str_strip_whitespace = True)
 
-    email: EmailStr
-    password: str
+    email: EmailStr = Field(..., max_length = MAX_EMAIL_LENGTH)
+    password: str = Field(..., min_length = MIN_PASSWORD_LENGTH, max_length = MAX_PASSWORD_LENGTH)
     
 class ResponseUser (BaseModel):
 
@@ -45,11 +72,33 @@ class ResponseUser (BaseModel):
 
 class UpdateUser (BaseModel):
 
-    model_config = ConfigDict(from_attributes = True)
+    model_config = ConfigDict(from_attributes = True, str_strip_whitespace = True)
 
-    name: str | None = None
+    name: str | None = Field(default = None, min_length = 2, max_length = MAX_NAME_LENGTH)
     email: EmailStr | None = None
-    phone: str | None = None
+    phone: str | None = Field(default = None, min_length = MIN_PHONE_LENGTH, max_length = MAX_PHONE_LENGTH)
+
+    @field_validator("name")
+    @classmethod
+    def validate_name(cls, value: str | None) -> str | None:
+        if value is None:
+            return value
+        if not value.strip():
+            raise ValueError("Nome nao pode ser vazio.")
+
+        return value
+
+    @field_validator("phone")
+    @classmethod
+    def validate_phone(cls, value: str | None) -> str | None:
+        if value is None:
+            return value
+        if not value.strip():
+            raise ValueError("Telefone nao pode ser vazio.")
+        if not re.fullmatch(r"\+?[0-9]{8,20}", value):
+            raise ValueError("Telefone deve conter apenas numeros e opcional '+' no inicio.")
+
+        return value
 
 class UpdatePasswordUser (BaseModel):
 
@@ -76,28 +125,23 @@ class UpdatePasswordUser (BaseModel):
 
 class CreateQuestion (BaseModel):
 
-    model_config = ConfigDict(from_attributes = True)
+    model_config = ConfigDict(from_attributes = True, str_strip_whitespace = True)
 
-    description: str
+    description: str = Field(..., min_length = 5, max_length = MAX_QUESTION_LENGTH)
+
+    @field_validator("description")
+    @classmethod
+    def validate_description(cls, value: str) -> str:
+        if not value.strip():
+            raise ValueError("Descricao da pergunta nao pode ser vazia.")
+
+        return value
 
 class ResponseQuestion (BaseModel):
 
     model_config = ConfigDict(from_attributes = True)
 
     description: str
-
-class AnswerQuestion (BaseModel):
-
-    model_config = ConfigDict(from_attributes = True)
-
-    question: str
-    answer: str
-
-class ResponseAnswerQuestion (BaseModel):
-
-    question: ResponseQuestion
-    answer: str
-    user: ResponseUser
 
 class ResponseQuestionsByUser(BaseModel):
 
@@ -106,9 +150,53 @@ class ResponseQuestionsByUser(BaseModel):
     question: str
     answer: str
 
+class AnswerQuestion (BaseModel):
+
+    model_config = ConfigDict(from_attributes = True, str_strip_whitespace = True)
+
+    question: str = Field(..., min_length = 5, max_length = MAX_QUESTION_LENGTH)
+    answer: str = Field(..., min_length = 1, max_length = MAX_ANSWER_LENGTH)
+
+    @field_validator("question")
+    @classmethod
+    def validate_question(cls, value: str) -> str:
+        if not value.strip():
+            raise ValueError("Pergunta nao pode ser vazia.")
+
+        return value
+
+    @field_validator("answer")
+    @classmethod
+    def validate_answer(cls, value: str) -> str:
+        if not value.strip():
+            raise ValueError("Resposta nao pode ser vazia.")
+
+        return value
+
+class ResponseAnswerQuestion (BaseModel):
+
+    question: ResponseQuestion
+    answer: str
+    user: ResponseUser
+
 class UpdateAnswer (BaseModel):
 
-    model_config = ConfigDict(from_attributes = True)
+    model_config = ConfigDict(from_attributes = True, str_strip_whitespace = True)
+    question: str = Field(..., min_length = 5, max_length = MAX_QUESTION_LENGTH)
+    new_answer: str = Field(..., min_length = 1, max_length = MAX_ANSWER_LENGTH)
 
-    question: str
-    new_answer: str
+    @field_validator("question")
+    @classmethod
+    def validate_question(cls, value: str) -> str:
+        if not value.strip():
+            raise ValueError("Pergunta nao pode ser vazia.")
+
+        return value
+
+    @field_validator("new_answer")
+    @classmethod
+    def validate_answer(cls, value: str) -> str:
+        if not value.strip():
+            raise ValueError("Resposta nao pode ser vazia.")
+
+        return value
