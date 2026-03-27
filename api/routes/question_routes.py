@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, status
 from utils.schemas import ResponseQuestion, CreateQuestion, ResponseQuestionsByUser
 from service.question_service import Question_Service
-from sessions.dependencies import get_question_service, get_current_user
+from utils.dependencies import get_question_service, get_current_user
 
 question_router = APIRouter(prefix = "/v1", tags = ["question"])
 

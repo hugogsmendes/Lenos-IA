@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, status, Response, Request
 from utils.schemas import ResponseUser, RegisterUser, LoginUser, UpdateUser, UpdatePasswordUser
 from service.user_service import User_Service
-from sessions.dependencies import get_user_service, get_current_user
+from utils.dependencies import get_user_service, get_current_user
 from utils.cookies import clear_auth_cookies, set_access_cookie, set_refresh_cookie
 
 user_router = APIRouter(prefix = "/v1", tags = ["user"])

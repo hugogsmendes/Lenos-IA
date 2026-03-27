@@ -1,5 +1,5 @@
 from typing import TYPE_CHECKING
-from utils.database import Base
+from sessions.database import Base
 from uuid import UUID, uuid4
 from datetime import datetime
 from sqlalchemy import DateTime, String, func

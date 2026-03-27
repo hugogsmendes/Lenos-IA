@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, status, HTTPException
 from utils.schemas import AnswerQuestion, ResponseAnswerQuestion, UpdateAnswer
 from service.answer_service import Answer_Service
 from repository.question_repository import Question_Repository
-from sessions.dependencies import get_answer_service, get_current_user, get_question_repository
+from utils.dependencies import get_answer_service, get_current_user, get_question_repository
 from utils.exceptions import BadRequest
 
 answer_router = APIRouter(prefix = "/v1/user", tags = ["answer"])
