@@ -75,13 +75,16 @@ class User_Service:
     async def update_user (self, schema: UpdateUser, email: str):
 
         try:
-
-            exists_user = await self.repository.get_user_by_email(schema.email)
-
-            if exists_user:
-                raise RegisterExistsError(register = schema.email)
-            
             user = await self.repository.get_user_by_email(email)
+
+            if not user:
+                raise RegisterNotFoundError(register = email)
+
+            if schema.email and schema.email != user.email:
+                exists_user = await self.repository.get_user_by_email(schema.email)
+
+                if exists_user:
+                    raise RegisterExistsError(register = schema.email)
         
             update_user = await self.repository.update_user(schema, user)
 

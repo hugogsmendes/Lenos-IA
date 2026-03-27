@@ -31,10 +31,14 @@ class User_Repository:
         return new_user
     
     async def update_user (self, schema: UpdateUser, user: User) -> User:
-        
-        user.name = schema.name
-        user.email = schema.email
-        user.phone = schema.phone
+        update_data = schema.model_dump(exclude_unset = True, exclude_none = True)
+
+        if not update_data:
+            return user
+
+        for field, value in update_data.items():
+            setattr(user, field, value)
+
         await self.session.commit()
         await self.session.refresh(user)
         return user
