@@ -19,6 +19,11 @@ class Answer (Base):
     questions_id: Mapped[UUID] = mapped_column(PG_UUID(as_uuid = True), ForeignKey("questions.id"), nullable = False)
     answer: Mapped[str] = mapped_column(String, nullable = False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone = True), server_default = func.now(), nullable = False)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone = True),
+        server_default = func.now(),
+        onupdate = func.now(),
+        nullable = False)
 
     user: Mapped["User"] = relationship(back_populates = "answers", lazy = "subquery")
     question: Mapped["Question"] = relationship(back_populates = "answers", lazy = "subquery")
