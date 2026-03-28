@@ -200,3 +200,9 @@ class UpdateAnswer (BaseModel):
             raise ValueError("Resposta nao pode ser vazia.")
 
         return value
+
+class GenerateReport (BaseModel):
+
+    model_config = ConfigDict(from_attributes = True, str_strip_whitespace = True)
+
+    video_url: str
