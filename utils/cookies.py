@@ -15,7 +15,7 @@ REFRESH_COOKIE_NAME = "refresh_token"
 def _cookie_kwargs(duration: int) -> dict:
     return {
         "httponly": True,
-        "secure": False,
+        "secure": True,
         "max_age": duration,
         "path": "/v1",
         "samesite": COOKIE_SAMESITE,
