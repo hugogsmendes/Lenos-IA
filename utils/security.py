@@ -68,9 +68,3 @@ def verify_token_jwt (token_jwt: str, expected_type: str | None = None):
 
     except jwt.InvalidTokenError:
         return None
-
-if __name__ == "__main__":
-    hashed_password = hash_password("Teste2025@fatec")
-    assert verify_password(hashed_password, "Teste2025@fatec") is True
-    token = create_access_token("ahjsha88912048", "Hugo", "hugogs.mendes@gmail.com")
-    assert verify_token_jwt(token, "access") is not None

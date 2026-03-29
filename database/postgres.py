@@ -34,6 +34,4 @@ if __name__ == "__main__":
             print(f"Failed to connect: {e}")
         finally:
             await engine.dispose()
-            
-    assert asyncio.run(test_connect()) == "Connection successful!"
 
