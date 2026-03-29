@@ -8,7 +8,6 @@ ACCESS_TOKEN_EXPIRE = int(os.getenv("ACCESS_TOKEN_EXPIRE"))
 REFRESH_TOKEN_EXPIRE = int(os.getenv("REFRESH_TOKEN_EXPIRE"))
 COOKIE_SAMESITE = os.getenv("COOKIE_SAMESITE")
 COOKIE_DOMAIN = os.getenv("COOKIE_DOMAIN")
-COOKIES_SECURE = os.getenv("COOKIE_SECURE")
 ACCESS_COOKIE_NAME = "access_token"
 REFRESH_COOKIE_NAME = "refresh_token"
 
@@ -16,7 +15,7 @@ REFRESH_COOKIE_NAME = "refresh_token"
 def _cookie_kwargs(duration: int) -> dict:
     return {
         "httponly": True,
-        "secure": COOKIES_SECURE,
+        "secure": False,
         "max_age": duration,
         "path": "/v1",
         "samesite": COOKIE_SAMESITE,
