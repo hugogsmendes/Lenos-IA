@@ -6,21 +6,29 @@ load_dotenv()
 
 ACCESS_TOKEN_EXPIRE = int(os.getenv("ACCESS_TOKEN_EXPIRE"))
 REFRESH_TOKEN_EXPIRE = int(os.getenv("REFRESH_TOKEN_EXPIRE"))
-COOKIE_SAMESITE = os.getenv("COOKIE_SAMESITE")
-COOKIE_DOMAIN = os.getenv("COOKIE_DOMAIN")
 ACCESS_COOKIE_NAME = "access_token"
 REFRESH_COOKIE_NAME = "refresh_token"
-
+ENV = os.getenv("ENV")
 
 def _cookie_kwargs(duration: int) -> dict:
-    return {
+    if ENV == "prod":
+        return {
         "httponly": True,
         "secure": True,
         "max_age": duration,
         "path": "/v1",
-        "samesite": COOKIE_SAMESITE,
-        "domain": COOKIE_DOMAIN,
-    }
+        "samesite": "lax",
+        "domain": "lenos-ia.com.br"
+        }
+    
+    else:
+        return {
+        "httponly": True,
+        "secure": True,
+        "max_age": duration,
+        "path": "/v1",
+        "samesite": "none",
+        }
 
 
 def set_access_cookie(response: Response, token: str) -> None:
@@ -39,17 +47,30 @@ def set_refresh_cookie(response: Response, token: str) -> None:
     )
 
 def clear_auth_cookies(response: Response) -> None:
-    response.delete_cookie(
-        key = ACCESS_COOKIE_NAME,
-        path = "/v1",
-        samesite = COOKIE_SAMESITE,
-        domain = COOKIE_DOMAIN,
-    )
-    response.delete_cookie(
-        key = REFRESH_COOKIE_NAME,
-        path = "/v1",
-        samesite = COOKIE_SAMESITE,
-        domain = COOKIE_DOMAIN,
-    )
 
-    
+    if ENV == "prod":
+        response.delete_cookie(
+            key = ACCESS_COOKIE_NAME,
+            path = "/v1",
+            samesite = "lax",
+            domain = "lenos-ia.com.br",
+        )
+        response.delete_cookie(
+            key = REFRESH_COOKIE_NAME,
+            path = "/v1",
+            samesite = "lax",
+            domain = "lenos-ia.com.br",
+        )
+
+    else:
+        response.delete_cookie(
+            key = ACCESS_COOKIE_NAME,
+            path = "/v1",
+            samesite = "none",
+        )
+        response.delete_cookie(
+            key = REFRESH_COOKIE_NAME,
+            path = "/v1",
+            samesite = "none",
+        )
+
