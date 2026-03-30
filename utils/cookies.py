@@ -28,7 +28,6 @@ def _cookie_kwargs(duration: int) -> dict:
         "max_age": duration,
         "path": "/v1",
         "samesite": "none",
-        "domain": "lenos-ia.com.br"
         }
 
 
@@ -66,14 +65,13 @@ def clear_auth_cookies(response: Response) -> None:
     else:
         response.delete_cookie(
             key = ACCESS_COOKIE_NAME,
+            secure = True,
             path = "/v1",
             samesite = "none",
-            domain= "lenos-ia.com.br"
         )
         response.delete_cookie(
             key = REFRESH_COOKIE_NAME,
+            secure = True,
             path = "/v1",
             samesite = "none",
-            domain = "lenos-ia.com.br"
         )
-
