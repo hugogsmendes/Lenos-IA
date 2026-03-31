@@ -51,12 +51,16 @@ def clear_auth_cookies(response: Response) -> None:
     if ENV == "prod":
         response.delete_cookie(
             key = ACCESS_COOKIE_NAME,
+            httponly = True,
+            secure = True,
             path = "/v1",
             samesite = "lax",
             domain = "lenos-ia.com.br",
         )
         response.delete_cookie(
             key = REFRESH_COOKIE_NAME,
+            httponly = True,
+            secure = True,
             path = "/v1",
             samesite = "lax",
             domain = "lenos-ia.com.br",
@@ -65,12 +69,14 @@ def clear_auth_cookies(response: Response) -> None:
     else:
         response.delete_cookie(
             key = ACCESS_COOKIE_NAME,
+            httponly = True,
             secure = True,
             path = "/v1",
             samesite = "none",
         )
         response.delete_cookie(
             key = REFRESH_COOKIE_NAME,
+            httponly = True,
             secure = True,
             path = "/v1",
             samesite = "none",

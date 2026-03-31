@@ -70,7 +70,7 @@ async def get_current_user(request: Request, credential: HTTPAuthorizationCreden
         payload = verify_token_jwt(token, "access")
 
         if not payload:
-            raise Unauthorized(detail = "Token inválido")
+            raise Unauthorized(detail = "Não autenticado")
         
         user = await repository.get_user_by_email(payload.get("email"))
 
