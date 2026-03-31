@@ -48,3 +48,8 @@ class User_Repository:
         user.password_hash = hash_password(new_password)
         await self.session.commit()
         await self.session.refresh(user)
+    
+    async def delete_user (self, user: User) -> None:
+
+        await self.session.delete(user)
+        await self.session.commit()

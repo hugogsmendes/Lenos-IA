@@ -116,4 +116,20 @@ class User_Service:
             raise
         except Exception:
             raise BadRequest
+    
+    async def delete_user(self, email: str):
+
+        try:
+
+            user = await self.repository.get_user_by_email(email)
+
+            if not user:
+                raise RegisterExistsError(register = email)
+            
+            return await self.repository.delete_user(user)
+        
+        except HTTPException:
+            raise
+        except Exception:
+            raise BadRequest
 

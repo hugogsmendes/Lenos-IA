@@ -15,7 +15,7 @@ from service.comment_service import Comment_Service
 from repository.report_repository import Report_Repository
 from service.report_service import Report_Service
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from utils.exceptions import Unauthorized, BadRequest
+from utils.exceptions import Unauthorized, BadRequest, RegisterNotFoundError
 from utils.security import verify_token_jwt
 
 security = HTTPBearer(auto_error = False)
@@ -75,7 +75,7 @@ async def get_current_user(request: Request, credential: HTTPAuthorizationCreden
         user = await repository.get_user_by_email(payload.get("email"))
 
         if not user:
-            raise Unauthorized(detail = "Usuário não encontrado")
+            raise RegisterNotFoundError(register = payload.get("email"))
 
         return user
 
