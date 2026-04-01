@@ -15,7 +15,7 @@ class Answer (Base):
     __tablename__ = "answers"
 
     id: Mapped[UUID] = mapped_column(UUID, primary_key = True, default = uuid4)
-    user_id: Mapped[UUID] = mapped_column(UUID, ForeignKey("users.id"), nullable = False)
+    user_id: Mapped[UUID] = mapped_column(UUID, ForeignKey("users.id", ondelete = "CASCADE"), nullable = False)
     questions_id: Mapped[UUID] = mapped_column(UUID, ForeignKey("questions.id"), nullable = False)
     answer: Mapped[str] = mapped_column(String, nullable = False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone = True), server_default = func.now(), nullable = False)
@@ -25,5 +25,5 @@ class Answer (Base):
         onupdate = func.now(),
         nullable = False)
 
-    user: Mapped["User"] = relationship(back_populates = "answers", lazy = "subquery")
+    user: Mapped["User"] = relationship(back_populates = "answers", lazy = "subquery", passive_deletes = True)
     question: Mapped["Question"] = relationship(back_populates = "answers", lazy = "subquery")

@@ -30,5 +30,5 @@ class User (Base):
         onupdate = func.now(),
         nullable = False)
     
-    analyses: Mapped[list["Analyse"]] = relationship(back_populates = "user", lazy = "subquery")
-    answers: Mapped[list["Answer"]] = relationship(back_populates = "user", lazy = "subquery")
+    analyses: Mapped[list["Analyse"]] = relationship(back_populates = "user", lazy = "subquery", cascade = "all, delete")
+    answers: Mapped[list["Answer"]] = relationship(back_populates = "user", lazy = "subquery", cascade = "all, delete")
