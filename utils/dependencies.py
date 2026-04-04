@@ -39,8 +39,9 @@ def get_question_service(repository: Question_Repository = Depends(get_question_
 def get_answer_repository(session: AsyncSession = Depends(get_session)):
     return Answer_Repository(session = session)
 
-def get_answer_service(repository: Answer_Repository = Depends(get_answer_repository)):
-    return Answer_Service(repository = repository)
+def get_answer_service(repository: Answer_Repository = Depends(get_answer_repository),
+                       question_repository: Question_Repository = Depends(get_question_repository)):
+    return Answer_Service(repository = repository, question_repository = question_repository)
 
 def get_analyse_repository(session: AsyncSession = Depends(get_session)):
     return Analyse_Repository(session = session)

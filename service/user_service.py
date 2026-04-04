@@ -32,7 +32,7 @@ class User_Service:
             user = await self.repository.get_user_by_email(schema.email)
             
             if not user:
-                raise RegisterNotFoundError(register = schema.email)
+                raise Unauthorized(detail = "Credencias inválidas")
             
             if not verify_password(user.password_hash, schema.password):
                 raise Unauthorized(detail = "Credencias inválidas")
@@ -42,8 +42,7 @@ class User_Service:
 
             return {
                 "access_token": access_token,
-                "refresh_token": refresh_token,
-                "type": "Bearer"
+                "refresh_token": refresh_token
             }
             
         except HTTPException:
@@ -56,15 +55,14 @@ class User_Service:
         try:
             payload = verify_token_jwt(request.cookies.get("refresh_token"), "refresh")
             if not payload:
-                raise Unauthorized(detail = "Token inválido")
+                raise Unauthorized(detail = "Não autenticado")
             
             user = await self.repository.get_user_by_email(payload.get("email"))
 
             access_token = create_access_token(user.id, user.name, user.email)
 
             return {
-                "access_token": access_token,
-                "type": "Bearer"
+                "access_token": access_token
             }
             
         except HTTPException:
@@ -94,7 +92,6 @@ class User_Service:
             return {
                 "access_token": access_token,
                 "refresh_token": refresh_token,
-                "type": "Bearer"
             }
         
         except HTTPException:

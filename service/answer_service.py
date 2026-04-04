@@ -1,29 +1,38 @@
 from repository.answer_repository import Answer_Repository
-from utils.schemas import AnswerQuestion
+from repository.question_repository import Question_Repository
+from utils.schemas import AnswerQuestion, UpdateAnswer
 from fastapi import Depends, HTTPException
-from utils.exceptions import BadRequest
+from utils.exceptions import BadRequest, RegisterNotFoundError
 
 class Answer_Service:
 
-    def __init__(self, repository: Answer_Repository):
+    def __init__(self, repository: Answer_Repository, question_repository: Question_Repository):
         self.repository = repository
+        self.question_repository = question_repository
 
-    async def answer_question(self, schema: AnswerQuestion, user_id, questions_id):
+    async def answer_question(self, body: AnswerQuestion, user_id):
 
         try:
-        
-            return await self.repository.answer_question(user_id, questions_id, schema.answer)
+            question = await self.question_repository.get_question_by_description(body.question)
+            if not question:
+                raise RegisterNotFoundError(register = f"Question {body.question}")
+            
+            return await self.repository.answer_question(user_id, question.id, body.answer)
 
         except HTTPException:
             raise
         except Exception:
             raise BadRequest
         
-    async def update_answer (self, new_answer: str, user_id, questions_id):
+    async def update_answer (self, body: UpdateAnswer, user_id):
         try:
             
-            answer = await self.repository.get_answer_by_user(user_id, questions_id)
-            return await self.repository.update_answer(new_answer, answer)
+            question = await self.question_repository.get_question_by_description(body.question)
+            if not question:
+                raise RegisterNotFoundError(register = f"Question {body.question}")
+            
+            answer = await self.repository.get_answer_by_user(user_id, question.id)
+            return await self.repository.update_answer(body.new_answer, answer)
 
         except HTTPException:
             raise
