@@ -31,25 +31,27 @@ async def refresh (request: Request, response: Response, service: User_Service =
 
     return {"message": "Refresh realizado com sucesso"}
 
-@user_router.get(path = "/me", status_code = status.HTTP_200_OK, response_model = ResponseUser)
-async def me (current_user = Depends(get_current_user)):
+@user_router.get(path = "/me", status_code = status.HTTP_200_OK)
+async def me (current_user: dict = Depends(get_current_user)):
     return current_user
 
 @user_router.put(path = "/update_user", status_code = status.HTTP_204_NO_CONTENT)
 async def update_user (response: Response, body: UpdateUser, service: User_Service = Depends(get_user_service), 
-                       current_user = Depends(get_current_user)):
-    res = await service.update_user(body, getattr(current_user, "email", None))
+                       current_user: dict = Depends(get_current_user)):
+    res = await service.update_user(body, current_user.get("email"))
     set_access_cookie(response, res.get("access_token"))
     set_refresh_cookie(response, res.get("refresh_token"))
 
 @user_router.put(path = "/update_password", status_code = status.HTTP_204_NO_CONTENT)
 async def update_password (body: UpdatePasswordUser, service: User_Service = Depends(get_user_service),
-                            current_user = Depends(get_current_user)):
-    return await service.update_password(body, getattr(current_user, "email", None))
+                            current_user: dict = Depends(get_current_user)):
+    return await service.update_password(body, current_user.get("email"))
+
 
 @user_router.delete(path = "/delete_user", status_code = status.HTTP_200_OK)
-async def delete_user (response: Response, service: User_Service = Depends(get_user_service), current_user = Depends(get_current_user)):
+async def delete_user (response: Response, service: User_Service = Depends(get_user_service), 
+                       current_user: dict = Depends(get_current_user)):
 
-    await service.delete_user(getattr(current_user, "email", None))
+    await service.delete_user(current_user.get("email"))
     clear_auth_cookies(response)
     return {"message": "Usuario deletado com sucesso"}

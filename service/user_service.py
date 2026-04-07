@@ -37,8 +37,8 @@ class User_Service:
             if not verify_password(user.password_hash, schema.password):
                 raise Unauthorized(detail = "Credencias inválidas")
             
-            access_token = create_access_token(user.id, user.name, user.email)
-            refresh_token = create_refresh_token(user.id, user.name, user.email)
+            access_token = create_access_token(user.id, user.name, user.email, user.phone)
+            refresh_token = create_refresh_token(user.id, user.name, user.email, user.phone)
 
             return {
                 "access_token": access_token,
@@ -57,9 +57,8 @@ class User_Service:
             if not payload:
                 raise Unauthorized(detail = "Não autenticado")
             
-            user = await self.repository.get_user_by_email(payload.get("email"))
-
-            access_token = create_access_token(user.id, user.name, user.email)
+            access_token = create_access_token(payload.get("sub"), payload.get("name"), 
+                                               payload.get("email"), payload.get("phone"))
 
             return {
                 "access_token": access_token
@@ -86,8 +85,8 @@ class User_Service:
         
             update_user = await self.repository.update_user(schema, user)
 
-            access_token = create_access_token(update_user.id, update_user.name, update_user.email)
-            refresh_token = create_refresh_token(update_user.id, update_user.name, update_user.email)
+            access_token = create_access_token(update_user.id, update_user.name, update_user.email, update_user.phone)
+            refresh_token = create_refresh_token(update_user.id, update_user.name, update_user.email, update_user.phone)
 
             return {
                 "access_token": access_token,
