@@ -28,13 +28,14 @@ def verify_password (hashed_password: str, password: str):
     except VerificationError:
         return False
 
-def create_access_token (user_id, name, email, token_duration = timedelta(seconds = ACCESS_TOKEN_EXPIRE)):
+def create_access_token (user_id, name, email, phone, token_duration = timedelta(seconds = ACCESS_TOKEN_EXPIRE)):
     expire = datetime.now(timezone.utc) + token_duration
 
     payload = {
         "sub": str(user_id),
         "name": name,
         "email": email,
+        "phone": phone, 
         "exp": expire,
         "type": "access"
     }
@@ -42,13 +43,14 @@ def create_access_token (user_id, name, email, token_duration = timedelta(second
     encoded_jwt = jwt.encode(payload, SECRET_KEY, algorithm = ALGORITHM)
     return encoded_jwt
 
-def create_refresh_token (user_id, name, email, token_duration = timedelta(seconds = REFRESH_TOKEN_EXPIRE)):
+def create_refresh_token (user_id, name, email, phone, token_duration = timedelta(seconds = REFRESH_TOKEN_EXPIRE)):
     expire = datetime.now(timezone.utc) + token_duration
 
     payload = {
         "sub": str(user_id),
         "name": name,
         "email": email,
+        "phone": phone,
         "exp": expire,
         "type": "refresh"
     }
@@ -67,4 +69,7 @@ def verify_token_jwt (token_jwt: str, expected_type: str | None = None):
         return payload
 
     except jwt.InvalidTokenError:
+        return None
+    
+    except jwt.ExpiredSignatureError:
         return None

@@ -61,8 +61,7 @@ def get_report_repository(session: AsyncSession = Depends(get_session)):
 def get_report_service(repository: Report_Repository = Depends(get_report_repository)):
     return Report_Service(repository = repository)
 
-async def get_current_user(request: Request, credential: HTTPAuthorizationCredentials = Depends(security),
-                           repository: User_Repository = Depends(get_user_repository)):
+async def get_current_user(request: Request, credential: HTTPAuthorizationCredentials = Depends(security)):
     try:
         token = request.cookies.get("access_token")
         if not token:
@@ -73,12 +72,11 @@ async def get_current_user(request: Request, credential: HTTPAuthorizationCreden
         if not payload:
             raise Unauthorized(detail = "Não autenticado")
         
-        user = await repository.get_user_by_email(payload.get("email"))
-
-        if not user:
-            raise RegisterNotFoundError(register = payload.get("email"))
-
-        return user
+        return {
+            "name": payload.get("name"),
+            "email": payload.get("email"),
+            "phone": payload.get("phone")
+        }
 
     except HTTPException:
         raise
