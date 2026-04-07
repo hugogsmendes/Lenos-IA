@@ -9,11 +9,11 @@ answer_router = APIRouter(prefix = "/v1/user", tags = ["answer"])
 async def answer_question(body: AnswerQuestion, service: Answer_Service = Depends(get_answer_service),
                           current_user = Depends(get_current_user)):
        
-    return await service.answer_question(body, getattr(current_user, "id", None))
+    return await service.answer_question(body, current_user.get("id"))
 
     
 @answer_router.put(path = "/update_answer", status_code = status.HTTP_204_NO_CONTENT)
 async def update_answer(body: UpdateAnswer, service: Answer_Service = Depends(get_answer_service),
                         current_user = Depends(get_current_user)):
         
-    return await service.update_answer(body, getattr(current_user, "id", None))
+    return await service.update_answer(body, current_user.get("id"))

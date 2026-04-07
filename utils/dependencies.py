@@ -73,6 +73,7 @@ async def get_current_user(request: Request, credential: HTTPAuthorizationCreden
             raise Unauthorized(detail = "Não autenticado")
         
         return {
+            "id": payload.get("sub"),
             "name": payload.get("name"),
             "email": payload.get("email"),
             "phone": payload.get("phone")
