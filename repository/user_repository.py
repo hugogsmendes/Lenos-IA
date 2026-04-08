@@ -22,7 +22,8 @@ class User_Repository:
         new_user = User(name = schema.name,
                         email = schema.email,
                         phone = schema.phone,
-                        password_hash = hash_password(schema.password))
+                        password_hash = hash_password(schema.password),
+                        terms_accepted = schema.terms_accepted)
 
         self.session.add(new_user)
         await self.session.commit()

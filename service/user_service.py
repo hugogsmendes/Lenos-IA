@@ -13,6 +13,9 @@ class User_Service:
 
     async def create_user (self, schema: RegisterUser):
 
+        if not schema.terms_accepted:
+            raise BadRequest
+
         try:
             user = await self.repository.get_user_by_email(schema.email)
 

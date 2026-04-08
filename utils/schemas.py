@@ -2,23 +2,24 @@ from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
 import re
 from datetime import datetime
 
-MAX_NAME_LENGTH = 100
+MAX_NAME_LENGTH = 50
 MAX_EMAIL_LENGTH = 200
-MIN_PHONE_LENGTH = 8
+MIN_PHONE_LENGTH = 13
 MAX_PHONE_LENGTH = 20
 MIN_PASSWORD_LENGTH = 8
 MAX_PASSWORD_LENGTH = 20
 MAX_QUESTION_LENGTH = 100
-MAX_ANSWER_LENGTH = 100
+MAX_ANSWER_LENGTH = 50
 
 class RegisterUser (BaseModel):
 
     model_config = ConfigDict(from_attributes = True, str_strip_whitespace = True)
 
-    name: str = Field(..., min_length = 2, max_length = MAX_NAME_LENGTH)
+    name: str = Field(..., min_length = 3, max_length = MAX_NAME_LENGTH)
     email: EmailStr = Field(..., max_length = MAX_EMAIL_LENGTH)
     phone: str = Field(..., min_length = MIN_PHONE_LENGTH, max_length = MAX_PHONE_LENGTH)
     password: str = Field(..., min_length = MIN_PASSWORD_LENGTH, max_length = MAX_PASSWORD_LENGTH)
+    terms_accepted: bool
 
     @field_validator("name")
     @classmethod
@@ -74,7 +75,7 @@ class UpdateUser (BaseModel):
 
     model_config = ConfigDict(from_attributes = True, str_strip_whitespace = True)
 
-    name: str | None = Field(default = None, min_length = 2, max_length = MAX_NAME_LENGTH)
+    name: str | None = Field(default = None, min_length = 3, max_length = MAX_NAME_LENGTH)
     email: EmailStr | None = None
     phone: str | None = Field(default = None, min_length = MIN_PHONE_LENGTH, max_length = MAX_PHONE_LENGTH)
 
