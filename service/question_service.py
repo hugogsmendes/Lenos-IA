@@ -1,6 +1,6 @@
 from repository.question_repository import Question_Repository
 from fastapi import HTTPException
-from utils.exceptions import BadRequest
+from utils.exceptions import BadGateway
 
 class Question_Service:
 
@@ -14,7 +14,7 @@ class Question_Service:
         except HTTPException:
             raise
         except Exception:
-            raise BadRequest
+            raise BadGateway
         
     async def get_questions_by_user (self, user_id):
         try:
@@ -31,4 +31,20 @@ class Question_Service:
         except HTTPException:
             raise
         except Exception:
-            raise BadRequest
+            raise BadGateway
+    
+    async def list_questions (self):
+        try:
+
+            res = await self.repository.list_questions()
+
+            return [
+                {
+                    "question": question.description
+                }
+            for question in res]
+        
+        except HTTPException:
+            raise
+        except Exception:
+            raise BadGateway

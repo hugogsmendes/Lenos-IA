@@ -1,8 +1,8 @@
 from repository.answer_repository import Answer_Repository
 from repository.question_repository import Question_Repository
 from utils.schemas import AnswerQuestion, UpdateAnswer
-from fastapi import Depends, HTTPException
-from utils.exceptions import BadRequest, RegisterNotFoundError
+from fastapi import HTTPException
+from utils.exceptions import BadGateway, NotFound
 
 class Answer_Service:
 
@@ -15,21 +15,21 @@ class Answer_Service:
         try:
             question = await self.question_repository.get_question_by_description(body.question)
             if not question:
-                raise RegisterNotFoundError(register = f"Question {body.question}")
+                raise NotFound(register = f"Question {body.question}")
             
             return await self.repository.answer_question(user_id, question.id, body.answer)
 
         except HTTPException:
             raise
         except Exception:
-            raise BadRequest
+            raise BadGateway
         
     async def update_answer (self, body: UpdateAnswer, user_id):
         try:
             
             question = await self.question_repository.get_question_by_description(body.question)
             if not question:
-                raise RegisterNotFoundError(register = f"Question {body.question}")
+                raise NotFound(register = f"Question {body.question}")
             
             answer = await self.repository.get_answer_by_user(user_id, question.id)
             return await self.repository.update_answer(body.new_answer, answer)
@@ -37,4 +37,4 @@ class Answer_Service:
         except HTTPException:
             raise
         except Exception:
-            raise BadRequest
+            raise BadGateway

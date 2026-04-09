@@ -33,3 +33,11 @@ class Question_Repository:
         result = await self.session.execute(query)
 
         return result.all()
+    
+    async def list_questions (self) -> list[(Question)]:
+
+        query = select(Question.description).order_by(Question.description.desc())
+
+        result = await self.session.execute(query)
+
+        return result.all()

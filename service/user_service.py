@@ -1,6 +1,6 @@
 from repository.user_repository import User_Repository
 from utils.schemas import RegisterUser, LoginUser, UpdateUser, UpdatePasswordUser
-from utils.exceptions import RegisterExistsError, BadRequest, RegisterNotFoundError, Unauthorized
+from utils.exceptions import Conflict, BadRequest, NotFound, Unauthorized, BadGateway
 from utils.security import verify_password, create_access_token, create_refresh_token, verify_token_jwt
 from fastapi import HTTPException, Request
 
@@ -20,14 +20,14 @@ class User_Service:
             user = await self.repository.get_user_by_email(schema.email)
 
             if user:
-                raise RegisterExistsError(register = schema.email)
+                raise Conflict(register = schema.email)
         
             return await self.repository.create_user(schema)
         
         except HTTPException:
             raise
         except Exception:
-            raise BadRequest
+            raise BadGateway
         
     async def login (self, schema: LoginUser):
         
@@ -51,7 +51,7 @@ class User_Service:
         except HTTPException:
             raise
         except Exception:
-            raise BadRequest
+            raise BadGateway
         
     async def refresh (self, request: Request):
 
@@ -70,7 +70,7 @@ class User_Service:
         except HTTPException:
             raise
         except Exception:
-            raise BadRequest
+            raise BadGateway
         
     async def update_user (self, schema: UpdateUser, email: str):
 
@@ -78,13 +78,13 @@ class User_Service:
             user = await self.repository.get_user_by_email(email)
 
             if not user:
-                raise RegisterNotFoundError(register = email)
+                raise NotFound(register = email)
 
             if schema.email and schema.email != user.email:
                 exists_user = await self.repository.get_user_by_email(schema.email)
 
                 if exists_user:
-                    raise RegisterExistsError(register = schema.email)
+                    raise Conflict(register = schema.email)
         
             update_user = await self.repository.update_user(schema, user)
 
@@ -99,7 +99,7 @@ class User_Service:
         except HTTPException:
             raise
         except Exception:
-            raise BadRequest
+            raise BadGateway
         
     async def update_password(self, schema: UpdatePasswordUser, email: str):
 
@@ -114,7 +114,7 @@ class User_Service:
         except HTTPException:
             raise
         except Exception:
-            raise BadRequest
+            raise BadGateway
     
     async def delete_user(self, email: str):
 
@@ -123,7 +123,7 @@ class User_Service:
             user = await self.repository.get_user_by_email(email)
 
             if not user:
-                raise RegisterExistsError(register = email)
+                raise NotFound(register = email)
             
             return await self.repository.delete_user(user)
         
