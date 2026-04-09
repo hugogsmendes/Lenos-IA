@@ -144,7 +144,7 @@ class ResponseQuestion (BaseModel):
 
     description: str
 
-class ResponseQuestionsByUser(BaseModel):
+class ResponseAnswersByUser(BaseModel):
 
     model_config = ConfigDict(from_attributes = True)
 

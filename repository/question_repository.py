@@ -25,15 +25,7 @@ class Question_Repository:
         result = await self.session.execute(query)
 
         return result.scalar_one_or_none()
-    
-    async def get_questions_by_user (self, user_id) -> list[(Question, Answer)]:
         
-        query = select(Question, Answer).join(Question.answers).filter(Answer.user_id == user_id)
-
-        result = await self.session.execute(query)
-
-        return result.all()
-    
     async def list_questions (self) -> list[(Question)]:
 
         query = select(Question.description).order_by(Question.description.desc())

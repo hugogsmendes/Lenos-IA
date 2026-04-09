@@ -38,3 +38,20 @@ class Answer_Service:
             raise
         except Exception:
             raise BadGateway
+    
+    async def get_answers_by_user (self, user_id):
+        try:
+
+            res = await self.repository.get_answers_by_user(user_id)
+            
+            return [
+                {
+                    "question": description,
+                    "answer": answer,
+                }
+            for description, answer in res]
+        
+        except HTTPException:
+            raise
+        except Exception:
+            raise BadGateway

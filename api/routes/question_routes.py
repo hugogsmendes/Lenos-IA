@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, status
-from utils.schemas import ResponseQuestion, CreateQuestion, ResponseQuestionsByUser
+from utils.schemas import ResponseQuestion, CreateQuestion
 from service.question_service import Question_Service
 from utils.dependencies import get_question_service, get_current_user
 
@@ -13,8 +13,3 @@ async def create_question(body: CreateQuestion, service: Question_Service = Depe
 @question_router.get(path = "/questions", status_code = status.HTTP_200_OK)
 async def list_questions(service: Question_Service = Depends(get_question_service), current_user: dict = Depends(get_current_user)):
     return await service.list_questions()
-
-@question_router.get(path = "/user/answers_questions", status_code = status.HTTP_200_OK, response_model = list[ResponseQuestionsByUser])
-async def get_questions_by_user(service: Question_Service = Depends(get_question_service),
-                         current_user: dict = Depends(get_current_user)):
-    return await service.get_questions_by_user(current_user.get("id"))

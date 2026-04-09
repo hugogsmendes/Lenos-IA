@@ -1,5 +1,6 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from models.answers import Answer
+from models.questions import Question
 from sqlalchemy import select
 
 class Answer_Repository:
@@ -31,4 +32,12 @@ class Answer_Repository:
         answer.answer = new_answer
         await self.session.commit()
         await self.session.refresh(answer)
+
+    async def get_answers_by_user (self, user_id) -> list[(Question, Answer)]:
+        
+        query = select(Question.description, Answer.answer).join(Question.answers).filter(Answer.user_id == user_id)
+
+        result = await self.session.execute(query)
+
+        return result.all()
 
