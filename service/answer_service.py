@@ -13,11 +13,11 @@ class Answer_Service:
     async def answer_question(self, body: AnswerQuestion, user_id):
 
         try:
-            question = await self.question_repository.get_question_by_description(body.question)
-            if not question:
+            question_id = await self.question_repository.get_question_id_by_description(body.question)
+            if not question_id:
                 raise NotFound(register = f"Question {body.question}")
             
-            return await self.repository.answer_question(user_id, question.id, body.answer)
+            return await self.repository.answer_question(user_id, question_id, body.answer)
 
         except HTTPException:
             raise
@@ -27,11 +27,11 @@ class Answer_Service:
     async def update_answer (self, body: UpdateAnswer, user_id):
         try:
             
-            question = await self.question_repository.get_question_by_description(body.question)
-            if not question:
+            question_id = await self.question_repository.get_question_id_by_description(body.question)
+            if not question_id:
                 raise NotFound(register = f"Question {body.question}")
             
-            answer = await self.repository.get_answer_by_user(user_id, question.id)
+            answer = await self.repository.get_answer_by_user(user_id, question_id)
             return await self.repository.update_answer(body.new_answer, answer)
 
         except HTTPException:

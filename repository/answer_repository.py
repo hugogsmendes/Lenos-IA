@@ -8,10 +8,10 @@ class Answer_Repository:
     def __init__(self, session: AsyncSession):
         self.session = session
 
-    async def answer_question(self, user_id, questions_id, answer) -> Answer:
+    async def answer_question(self, user_id, question_id, answer) -> Answer:
         
         new_anser = Answer(user_id = user_id,
-                           questions_id = questions_id,
+                           question_id = question_id,
                            answer = answer)
         self.session.add(new_anser)
         await self.session.commit()
@@ -19,9 +19,9 @@ class Answer_Repository:
 
         return new_anser
     
-    async def get_answer_by_user (self, user_id, questions_id) -> Answer:
+    async def get_answer_by_user (self, user_id, question_id) -> Answer:
 
-        query = select(Answer).filter((Answer.user_id == user_id) & (Answer.questions_id == questions_id))
+        query = select(Answer).filter((Answer.user_id == user_id) & (Answer.question_id == question_id))
 
         result = await self.session.execute(query)
 

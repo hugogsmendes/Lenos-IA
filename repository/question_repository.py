@@ -1,7 +1,6 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from models.questions import Question
-from models.answers import Answer
 
 class Question_Repository:
 
@@ -18,9 +17,9 @@ class Question_Repository:
 
         return new_question
     
-    async def get_question_by_description (self, description: str) -> Question:
+    async def get_question_id_by_description (self, description: str):
 
-        query = select(Question).filter(Question.description == description)
+        query = select(Question.id).filter(Question.description == description)
 
         result = await self.session.execute(query)
 
