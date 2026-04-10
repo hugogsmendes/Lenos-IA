@@ -14,7 +14,7 @@ class Comment (Base):
     __tablename__ = "comments"
 
     id: Mapped[UUID] = mapped_column(UUID, primary_key = True, default = uuid4)
-    analyses_id: Mapped[UUID] = mapped_column(UUID, ForeignKey("analyses.id", ondelete = "CASCADE"), nullable = False)
+    analysis_id: Mapped[UUID] = mapped_column(UUID, ForeignKey("analyses.id", ondelete = "CASCADE"), nullable = False)
     author_name: Mapped[str] = mapped_column(String, nullable = False)
     like_count: Mapped[int] = mapped_column(Integer, nullable = False)
     text_processing: Mapped[str] = mapped_column(String, nullable = False)

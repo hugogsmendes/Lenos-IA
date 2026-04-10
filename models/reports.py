@@ -14,7 +14,7 @@ class Report (Base):
     __tablename__ = "reports"
 
     id: Mapped[UUID] = mapped_column(UUID, primary_key = True, default = uuid4)
-    analyses_id: Mapped[UUID] = mapped_column(UUID, ForeignKey("analyses.id", ondelete = "CASCADE"), nullable = False, unique = True)
+    analysis_id: Mapped[UUID] = mapped_column(UUID, ForeignKey("analyses.id", ondelete = "CASCADE"), nullable = False, unique = True)
     prompt: Mapped[str] = mapped_column(String, nullable = False)
     report_markdown: Mapped[str] = mapped_column(String, nullable = False)
     report_title: Mapped[str] = mapped_column(String, nullable = False)
