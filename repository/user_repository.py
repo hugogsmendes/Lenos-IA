@@ -54,3 +54,10 @@ class User_Repository:
 
         await self.session.delete(user)
         await self.session.commit()
+
+    async def update_email_verified (self, user: User) -> None:
+        
+        user.email_verified = True
+        await self.session.commit()
+        await self.session.refresh(user)
+

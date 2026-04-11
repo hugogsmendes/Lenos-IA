@@ -58,3 +58,11 @@ async def delete_user (response: Response, service: User_Service = Depends(get_u
     await service.delete_user(current_user.get("email"))
     clear_auth_cookies(response)
     return {"message": "Usuario deletado com sucesso"}
+
+@user_router.get(path = "/verify_email", status_code = status.HTTP_200_OK)
+@limiter.limit("5/minute")
+async def verify_email (request: Request, token: str, service: User_Service = Depends(get_user_service)):
+
+    await service.verify_email(token)
+
+    return {"message": "Email verificado com sucesso"}

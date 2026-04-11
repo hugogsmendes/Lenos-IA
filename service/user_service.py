@@ -1,7 +1,7 @@
 from repository.user_repository import User_Repository
 from utils.schemas import RegisterUser, LoginUser, UpdateUser, UpdatePasswordUser
 from utils.exceptions import Conflict, BadRequest, NotFound, Unauthorized, BadGateway
-from utils.security import verify_password, create_access_token, create_refresh_token, verify_token_jwt
+from utils.security import verify_password, create_email_token, create_access_token, create_refresh_token, verify_token_jwt
 from fastapi import HTTPException, Request
 
 
@@ -22,7 +22,11 @@ class User_Service:
             if user:
                 raise Conflict(register = schema.email)
         
-            return await self.repository.create_user(schema)
+            new_user = await self.repository.create_user(schema)
+
+            token_email = create_email_token(new_user.email)
+
+            return new_user
         
         except HTTPException:
             raise
@@ -39,6 +43,9 @@ class User_Service:
             
             if not verify_password(user.password_hash, schema.password):
                 raise Unauthorized(detail = "Credencias inválidas")
+            
+            if not user.email_verified:
+                raise Unauthorized(detail = "Email não verificado")
             
             access_token = create_access_token(user.id, user.name, user.email, user.phone)
             refresh_token = create_refresh_token(user.id, user.name, user.email, user.phone)
@@ -58,7 +65,7 @@ class User_Service:
         try:
             payload = verify_token_jwt(request.cookies.get("refresh_token"), "refresh")
             if not payload:
-                raise Unauthorized(detail = "Não autenticado")
+                raise BadRequest
             
             access_token = create_access_token(payload.get("sub"), payload.get("name"), 
                                                payload.get("email"), payload.get("phone"))
@@ -130,5 +137,28 @@ class User_Service:
         except HTTPException:
             raise
         except Exception:
-            raise BadRequest
+            raise BadGateway
+        
+    async def verify_email(self, token: str):
+
+        try:
+
+            payload = verify_token_jwt(token, "email_verification")
+
+            if not payload:
+                raise BadRequest
+            
+            email = payload.get("email")
+
+            user = await self.repository.get_user_by_email(email)
+
+            if not user:
+                raise NotFound(register = email)
+            
+            return await self.repository.update_email_verified(user)
+                
+        except HTTPException:
+            raise
+        except Exception:
+            raise BadGateway
 

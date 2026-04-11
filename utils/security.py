@@ -58,6 +58,18 @@ def create_refresh_token (user_id, name, email, phone, token_duration = timedelt
     encoded_jwt = jwt.encode(payload, SECRET_KEY, algorithm = ALGORITHM)
     return encoded_jwt
 
+def create_email_token (email, token_duration = timedelta(hours = 24)):
+    expire = datetime.now(timezone.utc) + token_duration
+
+    payload = {
+        "email": email,
+        "exp": expire,
+        "type": "email_verification"
+    }
+
+    encoded_jwt = jwt.encode(payload, SECRET_KEY, algorithm = ALGORITHM)
+    return encoded_jwt  
+
 def verify_token_jwt (token_jwt: str, expected_type: str | None = None):
 
     try:
