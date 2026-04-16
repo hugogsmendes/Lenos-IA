@@ -19,7 +19,7 @@ class Report_Repository:
 
         return new_report
     
-    async def list_report (self, report_id) -> tuple:
+    async def get_report_by_id (self, report_id) -> tuple:
         
         query = (
                 select(Report.report_title, Report.report_markdown, Analyse.status)
@@ -31,10 +31,14 @@ class Report_Repository:
 
         return result.all()
     
-    async def get_report_by_id (self, report_id):
+    async def get_reports_by_user (self, user_id) -> tuple:
 
-        query = select(Report.id).filter(Report.id == report_id)
-
+        query = (
+                select(Report.report_title, Report.report_markdown, Analyse.status)
+                 .join(Report.analysis)
+                 .filter(Analyse.user_id == user_id)
+                 )
+        
         result = await self.session.execute(query)
 
-        return result.scalar_one_or_none()
+        return result.all()

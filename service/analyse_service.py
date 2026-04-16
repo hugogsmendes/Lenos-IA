@@ -14,7 +14,7 @@ class Analyse_Service:
 
             new_analysis = await self.repository.create_analysis(user_id, video_url, youtube_video_id)
 
-            return new_analysis.id
+            return new_analysis
         
         except HTTPException:
             raise

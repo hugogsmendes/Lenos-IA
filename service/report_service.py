@@ -22,12 +22,12 @@ class Report_Service:
             if not video_id:
                 raise BadRequest
             
-            analysis_id = await self.analyse_service.create_analysis(user_id, body.video_url, video_id)
+            analysis = await self.analyse_service.create_analysis(user_id, body.video_url, video_id)
 
-            new_report = await self.repository.create_report(analysis_id)
+            new_report = await self.repository.create_report(analysis.id)
 
             return {
-                "report_id": new_report.id, "status": "pending"
+                "report_id": new_report.id, "status": analysis.status
             }
 
         except HTTPException:
@@ -35,16 +35,33 @@ class Report_Service:
         except Exception:
             raise BadGateway
         
-    async def list_report (self, report_id):
+    async def get_report_by_id (self, report_id):
 
         try:
-
-            report = await self.repository.get_report_by_id(report_id)
-
-            if not report:
-                raise NotFound(register = "Relatório")
             
-            res = await self.repository.list_report(report_id)
+            res = await self.repository.get_report_by_id(report_id)
+
+            if not res:
+                raise NotFound(register = "Relatório")
+
+            return [
+                {
+                    "title": title,
+                    "report": report,
+                    "status": status
+                }
+            for title, report, status in res]
+        
+        except HTTPException:
+            raise
+        except Exception:
+            raise BadGateway
+    
+    async def get_reports_by_user (self, user_id):
+
+        try:
+            
+            res = await self.repository.get_reports_by_user(user_id)
 
             return [
                 {
