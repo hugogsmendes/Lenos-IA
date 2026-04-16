@@ -15,7 +15,7 @@ from service.comment_service import Comment_Service
 from repository.report_repository import Report_Repository
 from service.report_service import Report_Service
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from utils.exceptions import Unauthorized, BadGateway
+from utils.exceptions import Unauthorized, BadGateway, Forbidden
 from utils.security import verify_token_jwt
 
 security = HTTPBearer(auto_error = False)
@@ -68,12 +68,12 @@ async def get_current_user(request: Request, credential: HTTPAuthorizationCreden
     try:
         token = request.cookies.get("access_token")
         if not token:
-            raise Unauthorized(detail = "Não autenticado")
+            raise Forbidden
     
         payload = verify_token_jwt(token, "access")
 
         if not payload:
-            raise Unauthorized(detail = "Não autenticado")
+            raise Forbidden
         
         return {
             "id": payload.get("sub"),
