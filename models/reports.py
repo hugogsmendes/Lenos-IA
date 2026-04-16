@@ -15,9 +15,9 @@ class Report (Base):
 
     id: Mapped[UUID] = mapped_column(UUID, primary_key = True, default = uuid4)
     analysis_id: Mapped[UUID] = mapped_column(UUID, ForeignKey("analyses.id", ondelete = "CASCADE"), nullable = False, unique = True)
-    prompt: Mapped[str] = mapped_column(String, nullable = False)
-    report_markdown: Mapped[str] = mapped_column(String, nullable = False)
-    report_title: Mapped[str] = mapped_column(String, nullable = False)
+    prompt: Mapped[str] = mapped_column(String, nullable = True)
+    report_markdown: Mapped[str] = mapped_column(String, nullable = True)
+    report_title: Mapped[str] = mapped_column(String, nullable = True)
     input_tokens: Mapped[int] = mapped_column(Integer, nullable = True)
     output_tokens: Mapped[int] = mapped_column(Integer, nullable = True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone = True), server_default = func.now(), nullable = False)

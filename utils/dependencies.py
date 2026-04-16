@@ -58,8 +58,11 @@ def get_comment_service(repository: Comment_Repository = Depends(get_comment_rep
 def get_report_repository(session: AsyncSession = Depends(get_session)):
     return Report_Repository(session = session)
 
-def get_report_service(repository: Report_Repository = Depends(get_report_repository)):
-    return Report_Service(repository = repository)
+def get_report_service(repository: Report_Repository = Depends(get_report_repository),
+                       comment_service: Comment_Service = Depends(get_comment_service),
+                       analyse_service: Analyse_Service = Depends(get_analyse_service)):
+    
+    return Report_Service(repository = repository, comment_service = comment_service, analyse_service = analyse_service)
 
 async def get_current_user(request: Request, credential: HTTPAuthorizationCredentials = Depends(security)):
     try:

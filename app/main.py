@@ -16,7 +16,9 @@ app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 from api.routes.user_routes import user_router
 from api.routes.question_routes import question_router
 from api.routes.answer_routes import answer_router
+from api.routes.report_routes import report_router
 
 app.include_router(user_router)
 app.include_router(question_router)
 app.include_router(answer_router)
+app.include_router(report_router)
