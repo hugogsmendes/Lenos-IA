@@ -15,7 +15,7 @@ from service.comment_service import Comment_Service
 from repository.report_repository import Report_Repository
 from service.report_service import Report_Service
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from utils.exceptions import Unauthorized, BadGateway, Forbidden
+from utils.exceptions import BadGateway, Forbidden
 from utils.security import verify_token_jwt
 
 security = HTTPBearer(auto_error = False)
