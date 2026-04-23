@@ -7,7 +7,7 @@ from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 if TYPE_CHECKING:
-    from .analyses import Analyse
+    from .analyses import Analysis
 
 class Comment (Base):
 
@@ -20,4 +20,4 @@ class Comment (Base):
     text_processing: Mapped[str] = mapped_column(String, nullable = False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone = True), server_default = func.now(), nullable = False)
 
-    analysis: Mapped["Analyse"] = relationship(back_populates = "comments", lazy = "subquery", passive_deletes = True)
+    analysis: Mapped["Analysis"] = relationship(back_populates = "comments", lazy = "subquery", passive_deletes = True)

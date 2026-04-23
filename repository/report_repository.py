@@ -1,6 +1,6 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from models.reports import Report
-from models.analyses import Analyse
+from models.analyses import Analysis
 from sqlalchemy import select
 from uuid import UUID
 
@@ -23,7 +23,7 @@ class Report_Repository:
     async def get_report_by_id (self, report_id: UUID) -> tuple:
         
         query = (
-                select(Report.id, Report.report_title, Report.report_markdown, Analyse.status)
+                select(Report.id, Report.report_title, Report.report_markdown, Analysis.status)
                  .join(Report.analysis)
                  .filter(Report.id == report_id)
                  )
@@ -35,9 +35,9 @@ class Report_Repository:
     async def get_reports_by_user (self, user_id: UUID) -> tuple:
 
         query = (
-                select(Report.id, Report.report_title, Report.report_markdown, Analyse.status)
+                select(Report.id, Report.report_title, Report.report_markdown, Analysis.status)
                  .join(Report.analysis)
-                 .filter(Analyse.user_id == user_id)
+                 .filter(Analysis.user_id == user_id)
                  )
         
         result = await self.session.execute(query)

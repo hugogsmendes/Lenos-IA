@@ -7,7 +7,7 @@ from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 if TYPE_CHECKING:
-    from .analyses import Analyse
+    from .analyses import Analysis
     from .answers import Answer
 
 
@@ -32,5 +32,5 @@ class User (Base):
     terms_accepted: Mapped[bool] = mapped_column(Boolean, nullable = False)
     email_verified: Mapped[bool] = mapped_column(Boolean, nullable = False, default = False)
     
-    analyses: Mapped[list["Analyse"]] = relationship(back_populates = "user", lazy = "subquery", cascade = "all, delete")
+    analyses: Mapped[list["Analysis"]] = relationship(back_populates = "user", lazy = "subquery", cascade = "all, delete")
     answers: Mapped[list["Answer"]] = relationship(back_populates = "user", lazy = "subquery", cascade = "all, delete")

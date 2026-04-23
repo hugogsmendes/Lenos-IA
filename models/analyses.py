@@ -11,7 +11,7 @@ if TYPE_CHECKING:
     from .comments import Comment
     from .reports import Report
 
-class Analyse (Base):
+class Analysis (Base):
 
     __tablename__ = "analyses"
 

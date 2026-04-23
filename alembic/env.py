@@ -32,7 +32,7 @@ if config.config_file_name is not None:
 from database.postgres import Base
 
 from models.users import User
-from models.analyses import Analyse
+from models.analyses import Analysis
 from models.comments import Comment
 from models.reports import Report
 from models.answers import Answer

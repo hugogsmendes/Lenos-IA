@@ -7,7 +7,7 @@ from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 if TYPE_CHECKING:
-    from .analyses import Analyse
+    from .analyses import Analysis
 
 class Report (Base):
 
@@ -27,4 +27,4 @@ class Report (Base):
         onupdate = func.now(),
         nullable = False)
 
-    analysis: Mapped["Analyse"] = relationship(back_populates = "report", lazy = "subquery", passive_deletes = True)
+    analysis: Mapped["Analysis"] = relationship(back_populates = "report", lazy = "subquery", passive_deletes = True)
