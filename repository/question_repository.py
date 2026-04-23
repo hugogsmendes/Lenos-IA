@@ -1,6 +1,7 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from models.questions import Question
+from uuid import UUID
 
 class Question_Repository:
 
@@ -17,17 +18,17 @@ class Question_Repository:
 
         return new_question
     
-    async def get_question_id_by_description (self, description: str):
+    async def get_question_by_id (self, question_id: UUID) -> Question:
 
-        query = select(Question.id).filter(Question.description == description)
+        query = select(Question).filter(Question.id == question_id)
 
         result = await self.session.execute(query)
 
         return result.scalar_one_or_none()
-        
+
     async def list_questions (self) -> list[(Question)]:
 
-        query = select(Question.description).order_by(Question.description.desc())
+        query = select(Question.id, Question.description).order_by(Question.description.desc())
 
         result = await self.session.execute(query)
 

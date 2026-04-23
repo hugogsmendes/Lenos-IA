@@ -2,6 +2,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from models.answers import Answer
 from models.questions import Question
 from sqlalchemy import select
+from uuid import UUID
 
 class Answer_Repository:
 
@@ -19,7 +20,7 @@ class Answer_Repository:
 
         return new_anser
     
-    async def get_answer_by_user (self, user_id, question_id) -> Answer:
+    async def get_answer_by_user (self, user_id: UUID, question_id: UUID) -> Answer:
 
         query = select(Answer).filter((Answer.user_id == user_id) & (Answer.question_id == question_id))
 
@@ -35,7 +36,7 @@ class Answer_Repository:
 
     async def get_answers_by_user (self, user_id) -> list[(Question, Answer)]:
         
-        query = select(Question.description, Answer.answer).join(Question.answers).filter(Answer.user_id == user_id)
+        query = select(Question.id, Question.description, Answer.id, Answer.answer).join(Question.answers).filter(Answer.user_id == user_id)
 
         result = await self.session.execute(query)
 

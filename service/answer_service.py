@@ -13,11 +13,11 @@ class Answer_Service:
     async def answer_question(self, body: AnswerQuestion, user_id):
 
         try:
-            question_id = await self.question_repository.get_question_id_by_description(body.question)
-            if not question_id:
-                raise NotFound(register = f"Question {body.question}")
-            
-            return await self.repository.answer_question(user_id, question_id, body.answer)
+            question = await self.question_repository.get_question_by_id(body.question_id)
+            if not question:
+                raise NotFound("Question")
+                        
+            return await self.repository.answer_question(user_id, body.question_id, body.answer)
 
         except HTTPException:
             raise
@@ -26,12 +26,11 @@ class Answer_Service:
         
     async def update_answer (self, body: UpdateAnswer, user_id):
         try:
+            question = await self.question_repository.get_question_by_id(body.question_id)
+            if not question:
+                raise NotFound("Question")
             
-            question_id = await self.question_repository.get_question_id_by_description(body.question)
-            if not question_id:
-                raise NotFound(register = f"Question {body.question}")
-            
-            answer = await self.repository.get_answer_by_user(user_id, question_id)
+            answer = await self.repository.get_answer_by_user(user_id, body.question_id)
             return await self.repository.update_answer(body.new_answer, answer)
 
         except HTTPException:
@@ -46,10 +45,12 @@ class Answer_Service:
             
             return [
                 {
+                    "question_id": question_id,
                     "question": description,
+                    "answer_id": answer_id,
                     "answer": answer,
                 }
-            for description, answer in res]
+            for question_id, description, answer_id, answer in res]
         
         except HTTPException:
             raise

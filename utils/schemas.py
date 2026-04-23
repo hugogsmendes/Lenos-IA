@@ -1,6 +1,7 @@
 from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
 import re
 from datetime import datetime
+from uuid import UUID
 
 MAX_NAME_LENGTH = 50
 MAX_EMAIL_LENGTH = 200
@@ -155,16 +156,8 @@ class AnswerQuestion (BaseModel):
 
     model_config = ConfigDict(from_attributes = True, str_strip_whitespace = True)
 
-    question: str = Field(..., min_length = 5, max_length = MAX_QUESTION_LENGTH)
+    question_id: UUID
     answer: str = Field(..., min_length = 1, max_length = MAX_ANSWER_LENGTH)
-
-    @field_validator("question")
-    @classmethod
-    def validate_question(cls, value: str) -> str:
-        if not value.strip():
-            raise ValueError("Pergunta nao pode ser vazia.")
-
-        return value
 
     @field_validator("answer")
     @classmethod
@@ -183,16 +176,9 @@ class ResponseAnswerQuestion (BaseModel):
 class UpdateAnswer (BaseModel):
 
     model_config = ConfigDict(from_attributes = True, str_strip_whitespace = True)
-    question: str = Field(..., min_length = 5, max_length = MAX_QUESTION_LENGTH)
+
+    question_id: UUID
     new_answer: str = Field(..., min_length = 1, max_length = MAX_ANSWER_LENGTH)
-
-    @field_validator("question")
-    @classmethod
-    def validate_question(cls, value: str) -> str:
-        if not value.strip():
-            raise ValueError("Pergunta nao pode ser vazia.")
-
-        return value
 
     @field_validator("new_answer")
     @classmethod

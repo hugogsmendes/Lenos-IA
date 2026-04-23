@@ -23,6 +23,7 @@ class Question_Service:
 
             return [
                 {
+                    "id": question.id,
                     "question": question.description
                 }
             for question in res]
