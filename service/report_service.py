@@ -1,18 +1,17 @@
 from repository.report_repository import Report_Repository
 from service.comment_service import Comment_Service
-from service.analyse_service import Analyse_Service
+from service.analysis_service import Analysis_Service
 from utils.schemas import GenerateReport
 from fastapi import HTTPException
 from utils.exceptions import BadGateway, BadRequest, Forbidden
 from utils.processing import extract_youtube_video_id
-
 class Report_Service:
 
-    def __init__(self, repository: Report_Repository, comment_service: Comment_Service, analyse_service: Analyse_Service):
+    def __init__(self, repository: Report_Repository, comment_service: Comment_Service, analysis_service: Analysis_Service):
 
         self.repository = repository
         self.comment_service = comment_service
-        self.analyse_service = analyse_service
+        self.analysis_service = analysis_service
 
     async def create_report (self, body: GenerateReport, user_id):
 
@@ -22,7 +21,7 @@ class Report_Service:
             if not video_id:
                 raise BadRequest
             
-            analysis = await self.analyse_service.create_analysis(user_id, body.video_url, video_id)
+            analysis = await self.analysis_service.create_analysis(user_id, body.video_url, video_id)
 
             new_report = await self.repository.create_report(analysis.id)
 
@@ -38,9 +37,9 @@ class Report_Service:
     async def get_report_by_id (self, report_id, user_id):
 
         try:
-            analysis = await self.analyse_service.get_analysis_by_report_id(report_id)
+            analysis = await self.analysis_service.get_analysis_by_report_id(report_id)
 
-            if analysis.user_id != user_id:
+            if str(analysis.user_id) != user_id:
                 raise Forbidden
 
             res = await self.repository.get_report_by_id(report_id)

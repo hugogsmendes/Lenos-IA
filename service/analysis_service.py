@@ -1,11 +1,11 @@
-from repository.analyses_repository import Analyse_Repository
+from repository.analysis_repository import Analysis_Repository
 from fastapi import HTTPException
 from utils.exceptions import BadGateway, BadRequest
 
 
-class Analyse_Service:
+class Analysis_Service:
 
-    def __init__(self, repository: Analyse_Repository):
+    def __init__(self, repository: Analysis_Repository):
         self.repository = repository
 
     async def create_analysis(self, user_id, video_url, youtube_video_id):

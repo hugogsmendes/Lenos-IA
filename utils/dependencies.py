@@ -8,8 +8,8 @@ from repository.question_repository import Question_Repository
 from service.question_service import Question_Service
 from repository.answer_repository import Answer_Repository
 from service.answer_service import Answer_Service
-from repository.analyses_repository import Analyse_Repository
-from service.analyse_service import Analyse_Service
+from repository.analysis_repository import Analysis_Repository
+from service.analysis_service import Analysis_Service
 from repository.comment_repository import Comment_Repository
 from service.comment_service import Comment_Service
 from repository.report_repository import Report_Repository
@@ -43,11 +43,11 @@ def get_answer_service(repository: Answer_Repository = Depends(get_answer_reposi
                        question_repository: Question_Repository = Depends(get_question_repository)):
     return Answer_Service(repository = repository, question_repository = question_repository)
 
-def get_analyse_repository(session: AsyncSession = Depends(get_session)):
-    return Analyse_Repository(session = session)
+def get_analysis_repository(session: AsyncSession = Depends(get_session)):
+    return Analysis_Repository(session = session)
 
-def get_analyse_service(repository: Analyse_Repository = Depends(get_analyse_repository)):
-    return Analyse_Service(repository = repository)
+def get_analysis_service(repository: Analysis_Repository = Depends(get_analysis_repository)):
+    return Analysis_Service(repository = repository)
 
 def get_comment_repository(session: AsyncSession = Depends(get_session)):
     return Comment_Repository(session = session)
@@ -60,9 +60,9 @@ def get_report_repository(session: AsyncSession = Depends(get_session)):
 
 def get_report_service(repository: Report_Repository = Depends(get_report_repository),
                        comment_service: Comment_Service = Depends(get_comment_service),
-                       analyse_service: Analyse_Service = Depends(get_analyse_service)):
+                       analysis_service: Analysis_Service = Depends(get_analysis_service)):
     
-    return Report_Service(repository = repository, comment_service = comment_service, analyse_service = analyse_service)
+    return Report_Service(repository = repository, comment_service = comment_service, analysis_service = analysis_service)
 
 async def get_current_user(request: Request, credential: HTTPAuthorizationCredentials = Depends(security)):
     try:

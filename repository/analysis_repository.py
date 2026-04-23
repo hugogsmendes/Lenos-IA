@@ -5,7 +5,7 @@ from models.reports import Report
 from uuid import UUID
 
 
-class Analyse_Repository:
+class Analysis_Repository:
 
     def __init__(self, session: AsyncSession):
         self.session = session
