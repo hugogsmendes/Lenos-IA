@@ -3,7 +3,7 @@ from service.comment_service import Comment_Service
 from service.analyse_service import Analyse_Service
 from utils.schemas import GenerateReport
 from fastapi import HTTPException
-from utils.exceptions import BadGateway, BadRequest, NotFound
+from utils.exceptions import BadGateway, BadRequest, Forbidden
 from utils.processing import extract_youtube_video_id
 
 class Report_Service:
@@ -35,14 +35,15 @@ class Report_Service:
         except Exception:
             raise BadGateway
         
-    async def get_report_by_id (self, report_id):
+    async def get_report_by_id (self, report_id, user_id):
 
         try:
-            
-            res = await self.repository.get_report_by_id(report_id)
+            analysis = await self.analyse_service.get_analysis_by_report_id(report_id)
 
-            if not res:
-                raise NotFound(register = "Relatório")
+            if analysis.user_id != user_id:
+                raise Forbidden
+
+            res = await self.repository.get_report_by_id(report_id)
 
             return [
                 {

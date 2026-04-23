@@ -1,5 +1,7 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from models.analyses import Analyse
+from sqlalchemy import select
+from models.reports import Report
 from uuid import UUID
 
 
@@ -19,3 +21,11 @@ class Analyse_Repository:
         await self.session.refresh(new_analysis)
 
         return new_analysis
+    
+    async def get_analysis_by_report_id (self, report_id: UUID) -> Analyse:
+
+        query = select(Analyse).join(Analyse.report).filter(Report.id == report_id)
+
+        result = await self.session.execute(query)
+
+        return result.scalar_one_or_none()

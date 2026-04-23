@@ -17,7 +17,7 @@ async def create_report (request: Request, body: GenerateReport, service: Report
 
 @report_router.get(path = "/user/report/{id}", status_code = status.HTTP_200_OK)
 async def get_report_by_id (id: UUID, service: Report_Service = Depends(get_report_service), current_user: dict = Depends(get_current_user)):
-    return await service.get_report_by_id(id)
+    return await service.get_report_by_id(id, current_user.get("id"))
 
 @report_router.get(path = "/user/reports", status_code = status.HTTP_200_OK)
 async def get_reports_by_user (service: Report_Service = Depends(get_report_service), current_user: dict = Depends(get_current_user)):
