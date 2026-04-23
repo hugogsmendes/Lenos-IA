@@ -46,11 +46,12 @@ class Report_Service:
 
             return [
                 {
+                    "id": report_id,
                     "title": title,
                     "report": report,
                     "status": status
                 }
-            for title, report, status in res]
+            for report_id, title, report, status in res]
         
         except HTTPException:
             raise
@@ -65,11 +66,12 @@ class Report_Service:
 
             return [
                 {
+                    "id": report_id,
                     "title": title,
                     "report": report,
                     "status": status
                 }
-            for title, report, status in res]
+            for report_id, title, report, status in res]
         
         except HTTPException:
             raise
