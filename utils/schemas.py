@@ -11,6 +11,7 @@ MIN_PASSWORD_LENGTH = 8
 MAX_PASSWORD_LENGTH = 20
 MAX_QUESTION_LENGTH = 100
 MAX_ANSWER_LENGTH = 50
+MAX_TITLE_LENGTH = 30
 
 class RegisterUser (BaseModel):
 
@@ -193,3 +194,18 @@ class GenerateReport (BaseModel):
     model_config = ConfigDict(from_attributes = True, str_strip_whitespace = True)
 
     video_url: str
+
+class UpdatedReport (BaseModel):
+
+    model_config = ConfigDict(from_attributes = True, str_strip_whitespace = True)
+
+    report_id: UUID
+    title: str = Field(..., min_length = 2, max_length = MAX_TITLE_LENGTH)
+
+    @field_validator("title")
+    @classmethod
+    def validate_title(cls, value: str) -> str:
+        if not value.strip():
+            raise ValueError("Titulo nao pode ser vazia.")
+
+        return value

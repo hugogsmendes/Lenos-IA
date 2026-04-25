@@ -1,6 +1,6 @@
 from repository.analysis_repository import Analysis_Repository
 from fastapi import HTTPException
-from utils.exceptions import BadGateway, BadRequest
+from utils.exceptions import BadGateway, BadRequest, Forbidden
 
 
 class Analysis_Service:
@@ -32,6 +32,25 @@ class Analysis_Service:
 
             return analysis
         
+        except HTTPException:
+            raise
+        except Exception:
+            raise BadGateway
+        
+    async def delete_analysis (self, report_id, user_id):
+
+        try:
+
+            analysis = await self.repository.get_analysis_by_report_id(report_id)
+
+            if not analysis:
+                raise BadRequest
+
+            if str(analysis.user_id) != user_id:
+                raise Forbidden
+            
+            return await self.repository.delete_analysis(analysis)
+
         except HTTPException:
             raise
         except Exception:

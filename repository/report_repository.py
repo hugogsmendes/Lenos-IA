@@ -3,6 +3,7 @@ from models.reports import Report
 from models.analyses import Analysis
 from sqlalchemy import select
 from uuid import UUID
+from utils.schemas import UpdatedReport
 
 
 class Report_Repository:
@@ -20,7 +21,7 @@ class Report_Repository:
 
         return new_report
     
-    async def get_report_by_id (self, report_id: UUID) -> tuple:
+    async def get_report_by_id (self, report_id: UUID) -> tuple[UUID, str, str, str]:
         
         query = (
                 select(Report.id, Report.report_title, Report.report_markdown, Analysis.status)
@@ -32,7 +33,7 @@ class Report_Repository:
 
         return result.all()
     
-    async def get_reports_by_user (self, user_id: UUID) -> tuple:
+    async def get_reports_by_user (self, user_id: UUID) -> tuple[UUID, str, str, str]:
 
         query = (
                 select(Report.id, Report.report_title, Report.report_markdown, Analysis.status)
@@ -43,3 +44,17 @@ class Report_Repository:
         result = await self.session.execute(query)
 
         return result.all()
+    
+    async def get_report (self, report_id: UUID) -> Report:
+
+        query = select(Report).filter(Report.id == report_id)
+
+        result = await self.session.execute(query)
+
+        return result.scalar_one_or_none()
+    
+    async def update_report (self, schema: UpdatedReport, report: Report) -> None:
+        
+        report.report_title = schema.title
+        await self.session.commit()
+        await self.session.refresh(report)

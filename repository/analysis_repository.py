@@ -29,3 +29,8 @@ class Analysis_Repository:
         result = await self.session.execute(query)
 
         return result.scalar_one_or_none()
+    
+    async def delete_analysis (self, analysis: Analysis) -> None:
+
+        await self.session.delete(analysis)
+        await self.session.commit()

@@ -3,8 +3,9 @@ from service.comment_service import Comment_Service
 from service.analysis_service import Analysis_Service
 from utils.schemas import GenerateReport
 from fastapi import HTTPException
-from utils.exceptions import BadGateway, BadRequest, Forbidden
+from utils.exceptions import BadGateway, BadRequest, Forbidden, NotFound
 from utils.processing import extract_youtube_video_id
+from utils.schemas import UpdatedReport
 class Report_Service:
 
     def __init__(self, repository: Report_Repository, comment_service: Comment_Service, analysis_service: Analysis_Service):
@@ -77,3 +78,32 @@ class Report_Service:
             raise
         except Exception:
             raise BadGateway
+    
+    async def update_report (self, schema: UpdatedReport, user_id):
+        
+        try:
+            analysis = await self.analysis_service.get_analysis_by_report_id(schema.report_id)
+
+            if str(analysis.user_id) != user_id:
+                raise Forbidden
+            
+            report = await self.repository.get_report(schema.report_id)
+
+            return await self.repository.update_report(schema, report)
+
+        except HTTPException:
+            raise
+        except Exception:
+            raise BadGateway
+        
+    async def delete_report (self, report_id, user_id):
+
+        try:
+
+            return await self.analysis_service.delete_analysis(report_id, user_id)
+
+        except HTTPException:
+            raise
+        except Exception:
+            raise BadGateway
+
