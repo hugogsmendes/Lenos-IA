@@ -16,3 +16,4 @@ redis==7.3.0
 slowapi==0.1.9
 SQLAlchemy==2.0.48
 uvicorn==0.41.0
+resend==2.29.0

@@ -4,6 +4,7 @@ from database.postgres import SessionLocal
 from fastapi import Depends, Request, HTTPException
 from repository.user_repository import User_Repository
 from service.user_service import User_Service
+from service.email_service import Email_Service
 from repository.question_repository import Question_Repository
 from service.question_service import Question_Service
 from repository.answer_repository import Answer_Repository
@@ -27,8 +28,12 @@ async def get_session() -> AsyncGenerator[AsyncSession, None]:
 def get_user_repository(session: AsyncSession = Depends(get_session)):
     return User_Repository(session = session)
 
-def get_user_service(repository: User_Repository = Depends(get_user_repository)):
-    return User_Service(repository = repository)
+def get_email_service():
+    return Email_Service()
+
+def get_user_service(repository: User_Repository = Depends(get_user_repository),
+                     email_service: Email_Service = Depends(get_email_service)):
+    return User_Service(repository = repository, email_service = email_service)
 
 def get_question_repository(session: AsyncSession = Depends(get_session)):
     return Question_Repository(session = session)

@@ -1,6 +1,8 @@
 from repository.user_repository import User_Repository
+from service.email_service import Email_Service
 from utils.schemas import RegisterUser, LoginUser, UpdateUser, UpdatePasswordUser
 from utils.exceptions import Conflict, BadRequest, NotFound, Unauthorized, BadGateway
+from fastapi import BackgroundTasks
 from utils.security import verify_password, create_email_token, create_access_token, create_refresh_token, verify_token_jwt
 from fastapi import HTTPException, Request
 
@@ -8,10 +10,11 @@ from fastapi import HTTPException, Request
 
 class User_Service:
 
-    def __init__(self, repository: User_Repository):
+    def __init__(self, repository: User_Repository, email_service: Email_Service):
         self.repository = repository
+        self.email_service = email_service
 
-    async def create_user (self, schema: RegisterUser):
+    async def create_user (self, schema: RegisterUser, background_tasks: BackgroundTasks):
 
         if not schema.terms_accepted:
             raise BadRequest
@@ -26,6 +29,8 @@ class User_Service:
 
             token_email = create_email_token(new_user.email)
 
+            background_tasks.add_task(self.email_service.send_verification_email, new_user.email, token_email)
+
             return new_user
         
         except HTTPException:
@@ -38,7 +43,7 @@ class User_Service:
         try:
             user = await self.repository.get_user_by_email(schema.email)
             
-            if not user or not verify_password(user.password_hash, schema.password):
+            if not (user or verify_password(user.password_hash, schema.password)):
                 raise Unauthorized(detail = "Credencias inválidas")
             
             if not user.email_verified:

@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, status, Response, Request
+from fastapi import APIRouter, Depends, status, Response, Request, BackgroundTasks
 from utils.schemas import ResponseUser, RegisterUser, LoginUser, UpdateUser, UpdatePasswordUser
 from app.main import limiter
 from service.user_service import User_Service
@@ -9,8 +9,9 @@ user_router = APIRouter(prefix = "/v1", tags = ["user"])
 
 @user_router.post(path = "/register", status_code = status.HTTP_201_CREATED, response_model = ResponseUser)
 @limiter.limit("10/minute")
-async def register_user (request: Request, body: RegisterUser, service: User_Service = Depends(get_user_service)):
-    return await service.create_user(body)
+async def register_user (request: Request, body: RegisterUser, background_tasks: BackgroundTasks,
+                         service: User_Service = Depends(get_user_service)):
+    return await service.create_user(body, background_tasks)
 
 @user_router.post(path = "/login", status_code = status.HTTP_200_OK)
 @limiter.limit("10/minute")
