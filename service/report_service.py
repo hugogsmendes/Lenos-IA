@@ -22,6 +22,8 @@ class Report_Service:
             if not video_id:
                 raise BadRequest
             
+            await self.comment_service.verify_video_exists(video_id)
+                
             analysis = await self.analysis_service.create_analysis(user_id, body.video_url, video_id)
 
             new_report = await self.repository.create_report(analysis.id)
