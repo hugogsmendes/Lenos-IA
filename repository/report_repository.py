@@ -21,10 +21,10 @@ class Report_Repository:
 
         return new_report
     
-    async def get_report_by_id (self, report_id: UUID) -> tuple[UUID, str, str, str]:
+    async def get_report_by_id (self, report_id: UUID) -> tuple[UUID, str, str, str, str]:
         
         query = (
-                select(Report.id, Report.report_title, Report.report_markdown, Analysis.status)
+                select(Report.id, Report.report_title, Analysis.video_url, Report.report_markdown, Analysis.status)
                  .join(Report.analysis)
                  .filter(Report.id == report_id)
                  )
@@ -33,10 +33,10 @@ class Report_Repository:
 
         return result.all()
     
-    async def get_reports_by_user (self, user_id: UUID) -> tuple[UUID, str, str, str]:
+    async def get_reports_by_user (self, user_id: UUID) -> tuple[UUID, str, str, str, str]:
 
         query = (
-                select(Report.id, Report.report_title, Report.report_markdown, Analysis.status)
+                select(Report.id, Report.report_title, Analysis.video_url ,Report.report_markdown, Analysis.status)
                  .join(Report.analysis)
                  .filter(Analysis.user_id == user_id)
                  )

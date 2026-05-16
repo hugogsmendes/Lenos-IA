@@ -4,6 +4,7 @@ import os
 import googleapiclient.discovery
 import googleapiclient.errors
 from utils.exceptions import BadGateway, BadRequest, NotFound, Forbidden
+from fastapi import HTTPException
 
 
 load_dotenv()
@@ -45,23 +46,57 @@ class Comment_Service:
         except Exception as e:
             raise BadRequest(detail = f"Erro {str(e)}")
 
-    def get_comments_by_video_id (self, video_id: str):
+    def get_comments_by_video_id (self, video_id: str, max_comments: int = 200):
 
         try:
+            all_items = []
+            next_page_token = None
             
-            request = self.youtube_service.commentThreads().list(
-                part="snippet",
-                maxResults = 20,
-                order = "relevance",
-                videoId = video_id
-            )
+            while len(all_items) < max_comments:
+                request = self.youtube_service.commentThreads().list(
+                    part = "snippet",
+                    maxResults = min(100, max_comments - len(all_items)),
+                    order = "relevance",
+                    videoId = video_id,
+                    pageToken = next_page_token
+                )
 
-            response = request.execute()
-            return response
+                response = request.execute()
+                items = response.get("items", [])
+                
+                if not items:
+                    break
+                
+                all_items.extend(items)
+                
+                next_page_token = response.get("nextPageToken")
+                if not next_page_token:
+                    break
+            
+            return {"items": all_items[:max_comments], "pageInfo": response.get("pageInfo", {})}
         
         except googleapiclient.errors.HttpError as e:
             status_code = e.resp.status
             raise BadGateway(detail =f"Erro ao buscar comentários do YouTube (HTTP {status_code}): {e.error_details}")
         
-    def processing_comments(self, comments):
-        ...
+    def processing_comments(self, comments: dict):
+        try:
+            items = comments.get("items", []) if isinstance(comments, dict) else comments
+
+            processed_comments = []
+
+            for item in items:
+                snippet = item.get("snippet", {})
+                top_level_comment = snippet.get("topLevelComment", {})
+                comment_snippet = top_level_comment.get("snippet", {})
+                text = comment_snippet.get("textOriginal")
+
+                if text:
+                    processed_comments.append(text)
+
+            return processed_comments
+
+        except HTTPException:
+            raise
+        except Exception as e:
+            raise BadGateway(detail = f"Erro ao processar comentários: {str(e)}")

@@ -6,6 +6,8 @@ from fastapi import HTTPException
 from utils.exceptions import BadGateway, BadRequest, Forbidden, NotFound
 from utils.processing import extract_youtube_video_id
 from utils.schemas import UpdatedReport
+from fastapi import BackgroundTasks
+
 class Report_Service:
 
     def __init__(self, repository: Report_Repository, comment_service: Comment_Service, analysis_service: Analysis_Service):
@@ -14,7 +16,7 @@ class Report_Service:
         self.comment_service = comment_service
         self.analysis_service = analysis_service
 
-    async def create_report (self, body: GenerateReport, user_id):
+    async def create_report (self, body: GenerateReport, user_id, background_tasks: BackgroundTasks):
 
         try:
             video_id = extract_youtube_video_id(body.video_url)
@@ -24,13 +26,26 @@ class Report_Service:
             
             await self.comment_service.verify_video_exists(video_id)
                 
-            analysis = await self.analysis_service.create_analysis(user_id, body.video_url, video_id)
+            new_analysis = await self.analysis_service.create_analysis(user_id, body.video_url, video_id)
 
-            new_report = await self.repository.create_report(analysis.id)
+            new_report = await self.repository.create_report(new_analysis.id)
+            
+            background_tasks.add_task(self.generate_report, video_id)
 
             return {
-                "report_id": new_report.id, "status": analysis.status
+                "report_id": new_report.id, "status": new_analysis.status
             }
+
+        except HTTPException:
+            raise
+        except Exception:
+            raise BadGateway
+        
+    def generate_report (self, video_id: str):
+        try:
+            comments = self.comment_service.get_comments_by_video_id(video_id)
+
+            processed_comments = self.comment_service.processing_comments(comments)
 
         except HTTPException:
             raise
@@ -51,10 +66,11 @@ class Report_Service:
                 {
                     "id": report_id,
                     "title": title,
+                    "url": url,
                     "report": report,
                     "status": status
                 }
-            for report_id, title, report, status in res]
+            for report_id, title, url, report, status in res]
         
         except HTTPException:
             raise
@@ -71,10 +87,11 @@ class Report_Service:
                 {
                     "id": report_id,
                     "title": title,
+                    "url": url,
                     "report": report,
                     "status": status
                 }
-            for report_id, title, report, status in res]
+            for report_id, title, url, report, status in res]
         
         except HTTPException:
             raise
