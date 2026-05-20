@@ -1,6 +1,7 @@
 from dotenv import load_dotenv
 from repository.comment_repository import Comment_Repository
 import os
+import re
 import googleapiclient.discovery
 import googleapiclient.errors
 from utils.exceptions import BadGateway, BadRequest, NotFound, Forbidden
@@ -8,6 +9,26 @@ from fastapi import HTTPException
 
 
 load_dotenv()
+
+_EMOJI_PATTERN = re.compile(
+    "["
+    "\U0001F1E6-\U0001F1FF"
+    "\U0001F300-\U0001F5FF"
+    "\U0001F600-\U0001F64F"
+    "\U0001F680-\U0001F6FF"
+    "\U0001F700-\U0001F77F"
+    "\U0001F780-\U0001F7FF"
+    "\U0001F800-\U0001F8FF"
+    "\U0001F900-\U0001F9FF"
+    "\U0001FA00-\U0001FA6F"
+    "\U0001FA70-\U0001FAFF"
+    "\u2600-\u26FF"
+    "\u2700-\u27BF"
+    "\uFE0F"
+    "\u200D"
+    "]+",
+    flags = re.UNICODE,
+)
 
 class Comment_Service:
 
@@ -91,8 +112,10 @@ class Comment_Service:
                 comment_snippet = top_level_comment.get("snippet", {})
                 text = comment_snippet.get("textOriginal")
 
-                if text:
-                    processed_comments.append(text)
+                cleaned_text = self._clean_comment_text(text)
+
+                if cleaned_text:
+                    processed_comments.append(cleaned_text)
 
             return processed_comments
 
@@ -100,3 +123,18 @@ class Comment_Service:
             raise
         except Exception as e:
             raise BadGateway(detail = f"Erro ao processar comentários: {str(e)}")
+
+    def _clean_comment_text(self, text: str):
+        if not text:
+            return None
+
+        cleaned_text = _EMOJI_PATTERN.sub("", text)
+        cleaned_text = re.sub(r"\s+", " ", cleaned_text).strip()
+
+        if not cleaned_text:
+            return None
+
+        if not any(character.isalnum() for character in cleaned_text):
+            return None
+
+        return cleaned_text
