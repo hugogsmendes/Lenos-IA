@@ -55,10 +55,7 @@ class Report_Service:
     async def get_report_by_id (self, report_id, user_id):
 
         try:
-            analysis = await self.analysis_service.get_analysis_by_report_id(report_id)
-
-            if str(analysis.user_id) != user_id:
-                raise Forbidden
+            await self.analysis_service.get_analysis_by_report_id(report_id, user_id)
 
             res = await self.repository.get_report_by_id(report_id)
 
@@ -101,10 +98,7 @@ class Report_Service:
     async def update_report (self, schema: UpdatedReport, user_id):
         
         try:
-            analysis = await self.analysis_service.get_analysis_by_report_id(schema.report_id)
-
-            if str(analysis.user_id) != user_id:
-                raise Forbidden
+            await self.analysis_service.get_analysis_by_report_id(schema.report_id, user_id)
             
             report = await self.repository.get_report(schema.report_id)
 

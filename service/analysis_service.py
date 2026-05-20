@@ -21,7 +21,7 @@ class Analysis_Service:
         except Exception:
             raise BadGateway
         
-    async def get_analysis_by_report_id (self, report_id): 
+    async def get_analysis_by_report_id (self, report_id, user_id): 
 
         try:
 
@@ -29,6 +29,9 @@ class Analysis_Service:
 
             if not analysis:
                 raise BadRequest
+            
+            if str(analysis.user_id) != user_id:
+                raise Forbidden
 
             return analysis
         
@@ -41,13 +44,7 @@ class Analysis_Service:
 
         try:
 
-            analysis = await self.repository.get_analysis_by_report_id(report_id)
-
-            if not analysis:
-                raise BadRequest
-
-            if str(analysis.user_id) != user_id:
-                raise Forbidden
+            analysis = await self.get_analysis_by_report_id(report_id, user_id)
             
             return await self.repository.delete_analysis(analysis)
 
