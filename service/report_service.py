@@ -4,11 +4,10 @@ from repository.report_repository import Report_Repository
 from service.comment_service import Comment_Service
 from service.analysis_service import Analysis_Service
 from utils.schemas import GenerateReport
-from fastapi import HTTPException
+from fastapi import HTTPException, BackgroundTasks, status
 from utils.exceptions import BadGateway, BadRequest, Forbidden, NotFound
 from utils.processing import extract_youtube_video_id
 from utils.schemas import UpdatedReport
-from fastapi import BackgroundTasks, status
 from google import genai
 from google.genai import types, errors
 import json
