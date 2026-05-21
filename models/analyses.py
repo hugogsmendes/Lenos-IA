@@ -25,7 +25,7 @@ class Analysis (Base):
         server_default = "pending",
     )
     request_at: Mapped[datetime] = mapped_column(DateTime(timezone = True), server_default = func.now(), nullable = False)
-    finished_at: Mapped[datetime | None] = mapped_column(DateTime(timezone = True), nullable = True)
+    finished_at: Mapped[datetime | None] = mapped_column(DateTime(timezone = True), onupdate = func.now(), nullable = True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone = True), server_default = func.now(), nullable = False)
 
     user: Mapped["User"] = relationship(back_populates = "analyses", lazy = "subquery", passive_deletes = True)

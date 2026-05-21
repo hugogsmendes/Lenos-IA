@@ -4,13 +4,12 @@ from sqlalchemy import select
 from models.reports import Report
 from uuid import UUID
 
-
 class Analysis_Repository:
 
     def __init__(self, session: AsyncSession):
         self.session = session
 
-    async def create_analysis(self, user_id: UUID, video_url, youtube_video_id) -> Analysis:
+    async def create_analysis(self, user_id: UUID, video_url: str, youtube_video_id: str) -> Analysis:
         
         new_analysis = Analysis(user_id = user_id,
                                video_url = video_url,
@@ -34,3 +33,16 @@ class Analysis_Repository:
 
         await self.session.delete(analysis)
         await self.session.commit()
+
+    async def update_analysis_failed (self, analysis: Analysis) -> None:
+
+        analysis.status = "failed"
+        await self.session.commit()
+        await self.session.refresh(analysis)
+
+    async def update_analysis_done (self, analysis: Analysis) -> None:
+
+        analysis.status = "done"
+        await self.session.commit()
+        await self.session.refresh(analysis)
+

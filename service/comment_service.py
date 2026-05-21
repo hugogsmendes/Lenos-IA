@@ -39,7 +39,7 @@ class Comment_Service:
         self._api_key = os.getenv("key_youtube")
         self.youtube_service = googleapiclient.discovery.build(self.api_service_name, self.api_version, developerKey = self._api_key)
 
-    async def verify_video_exists (self, video_id: str):
+    def verify_video_exists (self, video_id: str):
 
         try:
             request = self.youtube_service.videos().list(

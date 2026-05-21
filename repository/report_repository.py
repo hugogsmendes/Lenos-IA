@@ -58,3 +58,18 @@ class Report_Repository:
         report.report_title = schema.title
         await self.session.commit()
         await self.session.refresh(report)
+
+    async def update_report_done (self, report: Report, prompt: str, title: str, markdown: str) -> None:
+
+        report.prompt = prompt
+        report.report_title = title
+        report.report_markdown = markdown
+        await self.session.commit()
+        await self.session.refresh(report)
+
+    async def update_report_failed (self, report: Report) -> None:
+        report.prompt = "failed"
+        report.report_title = "failed"
+        report.report_markdown = "failed"
+        await self.session.commit()
+        await self.session.refresh(report)
