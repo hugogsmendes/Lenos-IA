@@ -1,3 +1,5 @@
+from dotenv import load_dotenv
+import os
 from repository.report_repository import Report_Repository
 from service.comment_service import Comment_Service
 from service.analysis_service import Analysis_Service
@@ -7,6 +9,9 @@ from utils.exceptions import BadGateway, BadRequest, Forbidden, NotFound
 from utils.processing import extract_youtube_video_id
 from utils.schemas import UpdatedReport
 from fastapi import BackgroundTasks
+from google import genai
+
+load_dotenv()
 
 class Report_Service:
 
@@ -15,6 +20,8 @@ class Report_Service:
         self.repository = repository
         self.comment_service = comment_service
         self.analysis_service = analysis_service
+        self._api_key = os.getenv("key_gemini")
+        self.gemini_service = genai.Client(api_key = self._api_key)
 
     async def create_report (self, body: GenerateReport, user_id, background_tasks: BackgroundTasks):
 
