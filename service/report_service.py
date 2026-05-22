@@ -1,3 +1,5 @@
+from database.postgres import SessionLocal
+from repository.analysis_repository import Analysis_Repository
 from dotenv import load_dotenv
 import os
 from repository.report_repository import Report_Repository
@@ -52,26 +54,32 @@ class Report_Service:
             }
             ],
             "insights_comportamentais": [
-                "Uma frase curta com um insight acionável sobre o comportamento ou intenção desse público"
+                "Uma frase curta with um insight acionável sobre o comportamento ou intenção desse público"
             ]
             }
             """
 
-    async def create_report (self, body: GenerateReport, user_id, background_tasks: BackgroundTasks):
+    async def create_report (self, body: GenerateReport, user_id: uuid.UUID, background_tasks: BackgroundTasks):
 
         try:
+            count = await self.repository.report_count(user_id)
+
+            if count >= 3:
+                raise HTTPException(status_code = status.HTTP_429_TOO_MANY_REQUESTS, 
+                                    detail = "Limite de 3 relatórios atingido")
+
             video_id = extract_youtube_video_id(body.video_url)
 
             if not video_id:
                 raise BadRequest
-            
-            self.comment_service.verify_video_exists(video_id)
+    
+            await self.comment_service.verify_video_exists(video_id)
                 
             new_analysis = await self.analysis_service.create_analysis(user_id, body.video_url, video_id)
 
             new_report = await self.repository.create_report(new_analysis.id)
             
-            background_tasks.add_task(self.generate_report, video_id, new_analysis, new_report)
+            background_tasks.add_task(self.generate_report, video_id, new_report.id)
 
             return {
                 "report_id": new_report.id, "status": new_analysis.status
@@ -82,42 +90,57 @@ class Report_Service:
         except Exception:
             raise BadGateway
         
-    async def generate_report (self, video_id: str, analysis: Analysis, report: Report):
-        try:
-            comments = self.comment_service.get_comments_by_video_id(video_id)
-
-            processed_comments = self.comment_service.processing_comments(comments)
-
-            report_comments = await self.analyze_comments(processed_comments)
-
-            if not report_comments:
-                await self.analysis_service.update_analysis_failed(analysis)
-
-            await self.analysis_service.update_analysis_done(analysis)
+    async def generate_report (self, video_id: str, report_id: uuid.UUID):
+        
+        async with SessionLocal() as session:
+            repository = Report_Repository(session)
+            analysis_repository = Analysis_Repository(session)
+            analysis_service = Analysis_Service(analysis_repository)
             
-            title = report_comments.get("titulo_analise")
-            report_comments.pop("titulo_analise")
-            await self.repository.update_report_done(report, self.prompt, 
-                                                    title, str(report_comments))
-            
-        except HTTPException as e:
+            report = await repository.get_report(report_id)
+            analysis = await analysis_repository.get_analysis_by_report_id(report_id)
 
             try:
-                await self.analysis_service.update_analysis_failed(analysis)
-                await self.repository.update_report_failed(report)
-            except Exception:
-                pass
-            print(f"Handled HTTPException in background task: {e}")
-            return
-        except Exception as e:
+                comments = await self.comment_service.get_comments_by_video_id(video_id)
 
-            try:
-                await self.analysis_service.update_analysis_failed(analysis)
-                await self.repository.update_report_failed(report)
-            except Exception:
-                pass
-            print(f"Unexpected error in background task generate_report: {e}")
-            return
+                processed_comments = self.comment_service.processing_comments(comments)
+
+                if not processed_comments:
+                    await analysis_service.update_analysis_failed(analysis)
+                    await repository.update_report_failed(report)
+                    return
+
+                report_comments = await self.analyze_comments(processed_comments)
+
+                if not report_comments:
+                    await analysis_service.update_analysis_failed(analysis)
+                    await repository.update_report_failed(report)
+                    return
+
+                await analysis_service.update_analysis_done(analysis)
+                
+                title = report_comments.pop("titulo_analise", "Sem Título")
+                await repository.update_report_done(report, self.prompt, 
+                                                        title, json.dumps(report_comments, ensure_ascii = False))
+                
+            except HTTPException as e:
+
+                try:
+                    await analysis_service.update_analysis_failed(analysis)
+                    await repository.update_report_failed(report)
+                except Exception:
+                    pass
+                print(f"Handled HTTPException in background task: {e}")
+                return
+            except Exception as e:
+
+                try:
+                    await analysis_service.update_analysis_failed(analysis)
+                    await repository.update_report_failed(report)
+                except Exception:
+                    pass
+                print(f"Unexpected error in background task generate_report: {e}")
+                return
         
     async def analyze_comments (self, comments: list) -> dict:
 

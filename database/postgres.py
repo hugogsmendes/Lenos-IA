@@ -10,7 +10,7 @@ DATABASE_URL = os.getenv("DATABASE_URL_ASYNC")
                     
 engine = create_async_engine(DATABASE_URL,
                              pool_pre_ping = True,
-                             echo = True, # False em produção
+                             echo = False, # False em produção
                              pool_size = 3,
                              max_overflow = 5) 
 

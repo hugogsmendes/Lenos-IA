@@ -1,7 +1,7 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from models.reports import Report
 from models.analyses import Analysis
-from sqlalchemy import select
+from sqlalchemy import select, func
 from uuid import UUID
 from utils.schemas import UpdatedReport
 
@@ -73,3 +73,13 @@ class Report_Repository:
         report.report_markdown = "failed"
         await self.session.commit()
         await self.session.refresh(report)
+
+    async def report_count (self, user_id: UUID):
+        
+        query = (select(func.count()).select_from(Report)
+            .join(Report.analysis)
+            .filter(Analysis.user_id == user_id))
+
+        result = await self.session.execute(query)
+
+        return result.scalar()

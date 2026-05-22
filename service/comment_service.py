@@ -6,6 +6,7 @@ import googleapiclient.discovery
 import googleapiclient.errors
 from utils.exceptions import BadGateway, BadRequest, NotFound, Forbidden
 from fastapi import HTTPException
+import asyncio
 
 
 load_dotenv()
@@ -30,6 +31,7 @@ _EMOJI_PATTERN = re.compile(
     flags = re.UNICODE,
 )
 
+
 class Comment_Service:
 
     def __init__(self, repository: Comment_Repository):
@@ -39,7 +41,7 @@ class Comment_Service:
         self._api_key = os.getenv("key_youtube")
         self.youtube_service = googleapiclient.discovery.build(self.api_service_name, self.api_version, developerKey = self._api_key)
 
-    def verify_video_exists (self, video_id: str):
+    async def verify_video_exists (self, video_id: str):
 
         try:
             request = self.youtube_service.videos().list(
@@ -47,7 +49,7 @@ class Comment_Service:
                 id = video_id
             )
             
-            response = request.execute()
+            response = await asyncio.to_thread(request.execute)
             
             if response.get("pageInfo", {}).get("totalResults", 0) == 0:
                 raise NotFound(register = video_id, detail = "não encontrado no YouTube")
@@ -67,7 +69,7 @@ class Comment_Service:
         except Exception as e:
             raise BadRequest(detail = f"Erro {str(e)}")
 
-    def get_comments_by_video_id (self, video_id: str, max_comments: int = 200):
+    async def get_comments_by_video_id (self, video_id: str, max_comments: int = 200):
 
         try:
             all_items = []
@@ -82,7 +84,7 @@ class Comment_Service:
                     pageToken = next_page_token
                 )
 
-                response = request.execute()
+                response = await asyncio.to_thread(request.execute)
                 items = response.get("items", [])
                 
                 if not items:
