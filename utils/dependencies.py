@@ -18,12 +18,20 @@ from service.report_service import Report_Service
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from utils.exceptions import BadGateway, Forbidden
 from utils.security import verify_token_jwt
+from database.redis_client import get_redis
 
 security = HTTPBearer(auto_error = False)
 
 async def get_session() -> AsyncGenerator[AsyncSession, None]:
     async with SessionLocal() as session:
-        yield session        
+        yield session  
+
+async def get_session_redis():
+    session = await get_redis()
+    try:
+        yield session
+    finally:
+        await session.aclose()      
 
 def get_user_repository(session: AsyncSession = Depends(get_session)):
     return User_Repository(session = session)
