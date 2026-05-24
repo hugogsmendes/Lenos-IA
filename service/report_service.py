@@ -7,15 +7,14 @@ from service.comment_service import Comment_Service
 from service.analysis_service import Analysis_Service
 from utils.schemas import GenerateReport
 from fastapi import HTTPException, BackgroundTasks, status
-from utils.exceptions import BadGateway, BadRequest, Forbidden, NotFound
+from utils.exceptions import BadGateway, BadRequest
 from utils.processing import extract_youtube_video_id
 from utils.schemas import UpdatedReport
 from google import genai
 from google.genai import types, errors
 import json
-from models.analyses import Analysis
-from models.reports import Report
 import uuid
+import re
 
 
 load_dotenv()
@@ -30,34 +29,128 @@ class Report_Service:
         self._api_key = os.getenv("key_gemini")
         self.gemini_service = genai.Client(api_key = self._api_key)
         self.prompt = """
-            Você é um analista de dados especialista em comportamento de comunidades digitais e influenciadores. 
-            Sua tarefa é analisar uma lista de comentários limpos extraídos do YouTube.
-            Para o lote de comentários enviado, você deve gerar uma análise estatística e comportamental estrita.
-            Você deve responder exclusivamente em formato JSON, sem nenhuma marcação de texto, introdução ou conclusão (não use blocos de código markdown como ```json).
-            O JSON deve seguir exatamente esta estrutura:
-            {   
-                "titulo_analise": "Um título curto e contextualizado sobre o lote de comentários",
-                "resumo_metas": {
-                "total_analisado": número de comentários,
-                "predominancia_sentimento": "Positivo", "Negativo" ou "Neutro"
-            },
-                "metricas_sentimento": {
-                "positivo_porcentagem": número de 0 a 100,
-                "negativo_porcentagem": número de 0 a 100,
-                "neutro_porcentagem": número de 0 a 100
-            },
-            "principais_temas": [
-            {
-                "tema": "Nome do assunto mais falado",
-                "relevancia_porcentagem": número de 0 a 100,
-                "descricao_breve": "O que a comunidade está dizendo sobre isso"
-            }
-            ],
-            "insights_comportamentais": [
-                "Uma frase curta with um insight acionável sobre o comportamento ou intenção desse público"
-            ]
-            }
-            """
+            Você é um analista de dados especialista em comportamento de comunidades digitais, análise de audiência e interpretação de feedback social.
+            Sua tarefa é analisar comentários de um vídeo do YouTube e gerar uma análise estatística, comportamental e sentimental da recepção do conteúdo pelo público.
+
+            Considere exclusivamente as informações presentes nos comentários fornecidos.
+
+            A análise deve identificar:
+
+            * percepção geral do público
+            * predominância emocional
+            * padrões de comportamento
+            * assuntos mais discutidos
+            * críticas recorrentes
+            * elogios recorrentes
+            * possíveis oportunidades de conteúdo
+            * sinais de engajamento emocional ou polêmica
+            * intenção e interesse da audiência
+
+            Caso a quantidade de comentários seja pequena, reduza o nível de confiança da análise e informe isso nos insights.
+
+            Regras obrigatórias:
+
+            * Retorne a resposta exclusivamente em Markdown válido
+            * Não utilize HTML
+            * Utilize títulos, subtítulos, listas e tabelas em Markdown quando necessário
+            * Não escreva explicações fora da estrutura solicitada
+            * Não invente informações inexistentes
+            * Utilize linguagem analítica, objetiva e profissional
+            * Todos os percentuais devem variar entre 0 e 100
+            * A soma dos sentimentos deve resultar em aproximadamente 100
+
+            Estrutura obrigatória da resposta em Markdown:
+
+            # Relatório de Feedback do Vídeo
+
+            ## Título da Análise
+
+            [Título curto contextualizado]
+
+            ---
+
+            ## Resumo Geral
+
+            * Total de comentários analisados: X
+            * Nível de confiança da análise: Alto/Médio/Baixo
+            * Predominância de sentimento: Positivo/Negativo/Neutro
+
+            ### Resumo Analítico
+
+            [Resumo completo da percepção pública]
+
+            ---
+
+            ## Métricas de Sentimento
+
+            | Sentimento | Percentual |
+            | ---------- | ---------- |
+            | Positivo   | X%         |
+            | Negativo   | X%         |
+            | Neutro     | X%         |
+
+            ---
+
+            ## Principais Temas
+
+            ### Tema 1
+
+            * Relevância aproximada: X%
+            * Descrição:
+                [Descrição breve]
+
+            ### Tema 2
+
+            * Relevância aproximada: X%
+            * Descrição:
+                [Descrição breve]
+
+            ---
+
+            ## Principais Elogios
+            * [Elogio recorrente]
+            * [Elogio recorrente]
+            * [Elogio recorrente]
+
+            ---
+
+            ## Principais Críticas
+            * [Crítica recorrente]
+            * [Crítica recorrente]
+            * [Crítica recorrente]
+
+            ---
+
+            ## Comentários de Destaque
+
+            ### Comentário 1
+            * Motivo do destaque:
+            [Maior engajamento, polêmica, humor, crítica forte, etc.]
+
+            ### Comentário 2
+
+            * Motivo do destaque:
+            [Descrição]
+
+            ---
+
+            ## Insights Comportamentais
+            * [Insight acionável]
+            * [Insight acionável]
+            * [Insight acionável]
+
+            ---
+
+            ## Recomendações para Próximos Vídeos
+            * [Sugestão]
+            * [Sugestão]
+            * [Sugestão]
+
+            ---
+
+            ## Conclusão
+            [Conclusão final sobre a recepção do vídeo e comportamento da audiência]
+        """
 
     async def create_report (self, body: GenerateReport, user_id: uuid.UUID, background_tasks: BackgroundTasks):
 
@@ -96,7 +189,7 @@ class Report_Service:
             repository = Report_Repository(session)
             analysis_repository = Analysis_Repository(session)
             analysis_service = Analysis_Service(analysis_repository)
-            
+                
             report = await repository.get_report(report_id)
             analysis = await analysis_repository.get_analysis_by_report_id(report_id)
 
@@ -110,19 +203,23 @@ class Report_Service:
                     await repository.update_report_failed(report)
                     return
 
-                report_comments = await self.analyze_comments(processed_comments)
+                report_markdown = await self.analyze_comments(processed_comments)
 
-                if not report_comments:
+                if not report_markdown:
                     await analysis_service.update_analysis_failed(analysis)
                     await repository.update_report_failed(report)
                     return
 
                 await analysis_service.update_analysis_done(analysis)
-                
-                title = report_comments.pop("titulo_analise", "Sem Título")
+                    
+                title = "Sem Título"
+                match = re.search(r"## Título da Análise\s*\n\s*(.+)", report_markdown)
+                if match:
+                    title = match.group(1).strip().strip("[]*")
+
                 await repository.update_report_done(report, self.prompt, 
-                                                        title, json.dumps(report_comments, ensure_ascii = False))
-                
+                                                            title, report_markdown)
+                    
             except HTTPException as e:
 
                 try:
@@ -142,7 +239,7 @@ class Report_Service:
                 print(f"Unexpected error in background task generate_report: {e}")
                 return
         
-    async def analyze_comments (self, comments: list) -> dict:
+    async def analyze_comments (self, comments: list) -> str:
 
         try:
             
@@ -154,11 +251,10 @@ class Report_Service:
                     system_instruction = self.prompt,
                     temperature = 0.2,
                     max_output_tokens = 2000,
-                    response_mime_type = "application/json"
                 ),
                 contents = f"Analise os seguintes comentários:\n{content_for_gemini}"
             )
-            return json.loads(response.text)
+            return response.text
 
         except errors.APIError as e:
             print(f"Erro na API do Gemini: Código {e.code} - {e.message}")
