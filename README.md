@@ -1,1 +1,1 @@
-# Projeto de graduação da Fatec Franca.
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/hugogsmendes/Lenos-IA)
