@@ -1,8 +1,8 @@
-"""initial migration
+"""Initial tables
 
-Revision ID: b5c88bd4e9c9
+Revision ID: cf85de177acf
 Revises: 
-Create Date: 2026-03-14 22:42:33.855344
+Create Date: 2026-05-28 09:29:50.761787
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = 'b5c88bd4e9c9'
+revision: str = 'cf85de177acf'
 down_revision: Union[str, Sequence[str], None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -31,11 +31,16 @@ def upgrade() -> None:
     sa.Column('id', sa.UUID(), nullable=False),
     sa.Column('name', sa.String(), nullable=False),
     sa.Column('email', sa.String(), nullable=False),
+    sa.Column('phone', sa.String(), nullable=False),
     sa.Column('password_hash', sa.String(), nullable=False),
+    sa.Column('role', sa.Enum('user', 'admin', name='user_role'), server_default='user', nullable=False),
     sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
     sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
+    sa.Column('terms_accepted', sa.Boolean(), nullable=False),
+    sa.Column('email_verified', sa.Boolean(), nullable=False),
     sa.PrimaryKeyConstraint('id'),
-    sa.UniqueConstraint('email')
+    sa.UniqueConstraint('email'),
+    sa.UniqueConstraint('phone')
     )
     op.create_table('analyses',
     sa.Column('id', sa.UUID(), nullable=False),
@@ -46,41 +51,43 @@ def upgrade() -> None:
     sa.Column('request_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
     sa.Column('finished_at', sa.DateTime(timezone=True), nullable=True),
     sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
-    sa.ForeignKeyConstraint(['user_id'], ['users.id'], ),
+    sa.ForeignKeyConstraint(['user_id'], ['users.id'], ondelete='CASCADE'),
     sa.PrimaryKeyConstraint('id')
     )
     op.create_table('answers',
     sa.Column('id', sa.UUID(), nullable=False),
     sa.Column('user_id', sa.UUID(), nullable=False),
-    sa.Column('questions_id', sa.UUID(), nullable=False),
+    sa.Column('question_id', sa.UUID(), nullable=False),
     sa.Column('answer', sa.String(), nullable=False),
     sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
-    sa.ForeignKeyConstraint(['questions_id'], ['questions.id'], ),
-    sa.ForeignKeyConstraint(['user_id'], ['users.id'], ),
+    sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
+    sa.ForeignKeyConstraint(['question_id'], ['questions.id'], ),
+    sa.ForeignKeyConstraint(['user_id'], ['users.id'], ondelete='CASCADE'),
     sa.PrimaryKeyConstraint('id')
     )
     op.create_table('comments',
     sa.Column('id', sa.UUID(), nullable=False),
-    sa.Column('analyses_id', sa.UUID(), nullable=False),
+    sa.Column('analysis_id', sa.UUID(), nullable=False),
     sa.Column('author_name', sa.String(), nullable=False),
     sa.Column('like_count', sa.Integer(), nullable=False),
     sa.Column('text_processing', sa.String(), nullable=False),
     sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
-    sa.ForeignKeyConstraint(['analyses_id'], ['analyses.id'], ),
+    sa.ForeignKeyConstraint(['analysis_id'], ['analyses.id'], ondelete='CASCADE'),
     sa.PrimaryKeyConstraint('id')
     )
     op.create_table('reports',
     sa.Column('id', sa.UUID(), nullable=False),
-    sa.Column('analyses_id', sa.UUID(), nullable=False),
-    sa.Column('prompt', sa.String(), nullable=False),
-    sa.Column('report_markdown', sa.String(), nullable=False),
-    sa.Column('report_title', sa.String(), nullable=False),
+    sa.Column('analysis_id', sa.UUID(), nullable=False),
+    sa.Column('prompt', sa.String(), nullable=True),
+    sa.Column('report_markdown', sa.String(), nullable=True),
+    sa.Column('report_title', sa.String(), nullable=True),
     sa.Column('input_tokens', sa.Integer(), nullable=True),
     sa.Column('output_tokens', sa.Integer(), nullable=True),
     sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
-    sa.ForeignKeyConstraint(['analyses_id'], ['analyses.id'], ),
+    sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
+    sa.ForeignKeyConstraint(['analysis_id'], ['analyses.id'], ondelete='CASCADE'),
     sa.PrimaryKeyConstraint('id'),
-    sa.UniqueConstraint('analyses_id')
+    sa.UniqueConstraint('analysis_id')
     )
     # ### end Alembic commands ###
 
