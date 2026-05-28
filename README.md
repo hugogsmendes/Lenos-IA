@@ -143,4 +143,6 @@ O projeto segue um padrão de **Arquitetura em Camadas (Layered Architecture)** 
 ---
 
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/hugogsmendes/Lenos-IA)
+
+
 Desenvolvido por [Hugo Mendes](https://github.com/hugomendes) como projeto acadêmico para a Fatec Franca.
