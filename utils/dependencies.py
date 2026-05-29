@@ -1,6 +1,8 @@
 from collections.abc import AsyncGenerator
 from sqlalchemy.ext.asyncio import AsyncSession
+import redis
 from database.postgres import SessionLocal
+from database.redis_client import get_redis
 from fastapi import Depends, Request, HTTPException
 from repository.user_repository import User_Repository
 from service.user_service import User_Service
@@ -18,7 +20,6 @@ from service.report_service import Report_Service
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from utils.exceptions import BadGateway, Forbidden
 from utils.security import verify_token_jwt
-from database.redis_client import get_redis
 
 security = HTTPBearer(auto_error = False)
 
@@ -43,14 +44,14 @@ def get_user_service(repository: User_Repository = Depends(get_user_repository),
                      email_service: Email_Service = Depends(get_email_service)):
     return User_Service(repository = repository, email_service = email_service)
 
-def get_question_repository(session: AsyncSession = Depends(get_session)):
-    return Question_Repository(session = session)
+def get_question_repository(session: AsyncSession = Depends(get_session), cache: redis.Redis = Depends(get_session_redis)):
+    return Question_Repository(session = session, cache = cache)
 
 def get_question_service(repository: Question_Repository = Depends(get_question_repository)):
     return Question_Service(repository = repository)
 
-def get_answer_repository(session: AsyncSession = Depends(get_session)):
-    return Answer_Repository(session = session)
+def get_answer_repository(session: AsyncSession = Depends(get_session), cache: redis.Redis = Depends(get_session_redis)):
+    return Answer_Repository(session = session, cache = cache)
 
 def get_answer_service(repository: Answer_Repository = Depends(get_answer_repository),
                        question_repository: Question_Repository = Depends(get_question_repository)):
@@ -68,8 +69,8 @@ def get_comment_repository(session: AsyncSession = Depends(get_session)):
 def get_comment_service(repository: Comment_Repository = Depends(get_comment_repository)):
     return Comment_Service(repository = repository)
 
-def get_report_repository(session: AsyncSession = Depends(get_session)):
-    return Report_Repository(session = session)
+def get_report_repository(session: AsyncSession = Depends(get_session), cache: redis.Redis = Depends(get_session_redis)):
+    return Report_Repository(session = session, cache = cache)
 
 def get_report_service(repository: Report_Repository = Depends(get_report_repository),
                        comment_service: Comment_Service = Depends(get_comment_service),

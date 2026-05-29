@@ -1,12 +1,15 @@
 from sqlalchemy.ext.asyncio import AsyncSession
+import redis
 from sqlalchemy import select
 from models.questions import Question
 from uuid import UUID
 
 class Question_Repository:
 
-    def __init__(self, session: AsyncSession):
+    def __init__(self, session: AsyncSession, cache: redis.Redis):
         self.session = session
+        self.cache = cache
+        self.cache_key = "questions"
 
     async def create_question (self, description: str) -> Question:
 
