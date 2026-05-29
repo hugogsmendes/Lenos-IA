@@ -28,6 +28,7 @@ class Report_Service:
         self.analysis_service = analysis_service
         self._api_key = os.getenv("key_gemini")
         self.gemini_service = genai.Client(api_key = self._api_key)
+        self.model = "gemini-2.5-flash-lite"
         self.prompt = """
             Você é um analista de dados especialista em comportamento de comunidades digitais, análise de audiência e interpretação de feedback social.
             Sua tarefa é analisar comentários de um vídeo do YouTube e gerar uma análise estatística, comportamental e sentimental da recepção do conteúdo pelo público.
@@ -246,7 +247,7 @@ class Report_Service:
             content_for_gemini = "\n".join(f"{i+1}. {c}" for i, c in enumerate(comments))
 
             response = await self.gemini_service.aio.models.generate_content(
-                model = "gemini-2.5-flash-lite",
+                model = self.model,
                 config = types.GenerateContentConfig(
                     system_instruction = self.prompt,
                     temperature = 0.2,

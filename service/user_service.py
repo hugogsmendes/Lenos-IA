@@ -49,8 +49,8 @@ class User_Service:
             if not user.email_verified:
                 raise Unauthorized(detail = "Email não verificado")
             
-            access_token = create_access_token(user.id, user.name, user.email, user.phone)
-            refresh_token = create_refresh_token(user.id, user.name, user.email, user.phone)
+            access_token = create_access_token(user.id, user.name, user.email, user.phone, user.role)
+            refresh_token = create_refresh_token(user.id, user.name, user.email, user.phone, user.role)
 
             return {
                 "access_token": access_token,
@@ -70,7 +70,7 @@ class User_Service:
                 raise BadRequest
             
             access_token = create_access_token(payload.get("sub"), payload.get("name"), 
-                                               payload.get("email"), payload.get("phone"))
+                                               payload.get("email"), payload.get("phone"), payload.get("role"))
 
             return {
                 "access_token": access_token

@@ -28,7 +28,7 @@ def verify_password (hashed_password: str, password: str):
     except VerificationError:
         return False
 
-def create_access_token (user_id, name, email, phone, token_duration = timedelta(seconds = ACCESS_TOKEN_EXPIRE)):
+def create_access_token (user_id, name, email, phone, role, token_duration = timedelta(seconds = ACCESS_TOKEN_EXPIRE)):
     expire = datetime.now(timezone.utc) + token_duration
 
     payload = {
@@ -36,6 +36,7 @@ def create_access_token (user_id, name, email, phone, token_duration = timedelta
         "name": name,
         "email": email,
         "phone": phone, 
+        "role": role,
         "exp": expire,
         "type": "access"
     }
@@ -43,7 +44,7 @@ def create_access_token (user_id, name, email, phone, token_duration = timedelta
     encoded_jwt = jwt.encode(payload, SECRET_KEY, algorithm = ALGORITHM)
     return encoded_jwt
 
-def create_refresh_token (user_id, name, email, phone, token_duration = timedelta(seconds = REFRESH_TOKEN_EXPIRE)):
+def create_refresh_token (user_id, name, email, phone, role, token_duration = timedelta(seconds = REFRESH_TOKEN_EXPIRE)):
     expire = datetime.now(timezone.utc) + token_duration
 
     payload = {
@@ -51,6 +52,7 @@ def create_refresh_token (user_id, name, email, phone, token_duration = timedelt
         "name": name,
         "email": email,
         "phone": phone,
+        "role": role,
         "exp": expire,
         "type": "refresh"
     }

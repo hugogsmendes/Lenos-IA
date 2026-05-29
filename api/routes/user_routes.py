@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, status, Response, Request, BackgroundTas
 from utils.schemas import ResponseUser, RegisterUser, LoginUser, UpdateUser, UpdatePasswordUser
 from app.main import limiter
 from service.user_service import User_Service
-from utils.dependencies import get_user_service, get_current_user
+from utils.dependencies import get_user_service, get_current_user, get_current_user_adm
 from utils.cookies import clear_auth_cookies, set_access_cookie, set_refresh_cookie
 
 user_router = APIRouter(prefix = "/v1", tags = ["user"])
@@ -39,6 +39,10 @@ async def refresh (request: Request, response: Response, service: User_Service =
 async def me (current_user: dict = Depends(get_current_user)):
     return current_user
 
+@user_router.get(path = "/me/adm", status_code = status.HTTP_200_OK)
+async def me (current_user: dict = Depends(get_current_user_adm)):
+    return current_user
+
 @user_router.put(path = "/update_user", status_code = status.HTTP_204_NO_CONTENT)
 async def update_user (response: Response, body: UpdateUser, service: User_Service = Depends(get_user_service), 
                        current_user: dict = Depends(get_current_user)):
@@ -60,7 +64,7 @@ async def delete_user (response: Response, service: User_Service = Depends(get_u
     clear_auth_cookies(response)
     return {"message": "Usuario deletado com sucesso"}
 
-@user_router.get(path = "/verify_email", status_code = status.HTTP_200_OK)
+@user_router.post(path = "/verify_email", status_code = status.HTTP_200_OK)
 @limiter.limit("5/minute")
 async def verify_email (request: Request, token: str, service: User_Service = Depends(get_user_service)):
 

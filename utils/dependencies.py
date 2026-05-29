@@ -92,10 +92,18 @@ async def get_current_user(request: Request, credential: HTTPAuthorizationCreden
             "id": payload.get("sub"),
             "name": payload.get("name"),
             "email": payload.get("email"),
-            "phone": payload.get("phone")
+            "phone": payload.get("phone"),
+            "role": payload.get("role")
         }
 
     except HTTPException:
         raise
     except Exception:
         raise BadGateway
+    
+async def get_current_user_adm (current_user: dict = Depends(get_current_user)):
+    
+    if current_user.get("role") != "admin":
+        raise Forbidden
+    
+    return current_user
