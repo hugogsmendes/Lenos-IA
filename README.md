@@ -1,11 +1,12 @@
 # Lenos-IA
 
 [![FastAPI](https://img.shields.io/badge/FastAPI-005571?style=for-the-badge&logo=fastapi)](https://fastapi.tiangolo.com/)
-[![Python](https://img.shields.io/badge/Python-3.12-3776AB?style=for-the-badge&logo=python)](https://www.python.org/)
-[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-4169E1?style=for-the-badge&logo=postgresql)](https://www.postgresql.org/)
-[![Redis](https://img.shields.io/badge/Redis-DC382D?style=for-the-badge&logo=redis)](https://redis.io/)
-[![Google Gemini](https://img.shields.io/badge/Google_Gemini-8E75B2?style=for-the-badge&logo=googlegemini)](https://deepmind.google/technologies/gemini/)
-[![YouTube API](https://img.shields.io/badge/YouTube_API-FF0000?style=for-the-badge&logo=youtube)](https://developers.google.com/youtube/v3)
+[![SQLAlchemy](https://img.shields.io/badge/SQLAlchemy-4169E1?style=for-the-badge&logo=sqlalchemy)](https://www.sqlalchemy.org/)
+[![Pydantic](https://img.shields.io/badge/Pydantic-E92063?style=for-the-badge&logo=pydantic)](https://pydantic.dev/docs/)
+[![Redis](https://img.shields.io/badge/Redis-DC382D?style=for-the-badge&logo=redis)](https://redis.io/docs/latest/integrate/redis-py/)
+[![Gemini](https://img.shields.io/badge/Gemini-4285F4?style=for-the-badge&logo=googlegemini)](https://ai.google.dev/gemini-api/docs?hl=pt-br)
+[![YouTube](https://img.shields.io/badge/YouTube-FF0000?style=for-the-badge&logo=youtube)](https://developers.google.com/youtube/v3)
+[![Resend](https://img.shields.io/badge/Resend-000000?style=for-the-badge&logo=resend)](https://resend.com/docs/send-with-fastapi)
 
 ## 📝 Descrição
 
@@ -122,7 +123,7 @@ O projeto segue um padrão de **Arquitetura em Camadas (Layered Architecture)** 
 *   `POST /register`: Registro de novo usuário.
 *   `POST /login`: Autenticação e recebimento de cookies.
 *   `GET /me`: Dados do usuário logado.
-*   `GET /verify_email`: Validação de conta via token.
+*   `POST /verify_email`: Validação de conta via token.
 
 ### Relatórios (`/v1/user`)
 *   `POST /generate_report`: Inicia análise de um vídeo (Background Task).
