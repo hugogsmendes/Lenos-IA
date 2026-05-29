@@ -4,10 +4,10 @@ import os
 
 load_dotenv()
 
-URL = os.getenv("REDIS_URL")
+REDIS_URL = os.getenv("REDIS_URL")
 
 pool = ConnectionPool.from_url(
-    url = URL,
+    url = REDIS_URL,
     max_connections = 10,
     decode_responses = True,
 )
