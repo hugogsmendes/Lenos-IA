@@ -3,6 +3,7 @@ from repository.question_repository import Question_Repository
 from utils.schemas import AnswerQuestion, UpdateAnswer
 from fastapi import HTTPException
 from utils.exceptions import BadGateway, NotFound
+import json
 
 class Answer_Service:
 
@@ -31,7 +32,9 @@ class Answer_Service:
                 raise NotFound("Question")
             
             answer = await self.repository.get_answer_by_user(user_id, body.question_id)
-            return await self.repository.update_answer(body.new_answer, answer)
+            
+            user_key = str(self.repository.cache_key + "_" + user_id)
+            return await self.repository.update_answer(body.new_answer, answer, user_key)
 
         except HTTPException:
             raise
@@ -41,9 +44,16 @@ class Answer_Service:
     async def get_answers_by_user (self, user_id):
         try:
 
+            user_key = str(self.repository.cache_key + "_" + user_id)
+
+            user_answers = await self.repository.cache.get(user_key)
+
+            if user_answers:
+                return json.loads(user_answers)
+
             res = await self.repository.get_answers_by_user(user_id)
             
-            return [
+            result = [
                 {
                     "question_id": question_id,
                     "question": description,
@@ -51,6 +61,10 @@ class Answer_Service:
                     "answer": answer,
                 }
             for question_id, description, answer_id, answer in res]
+
+            await self.repository.cache.set(user_key, json.dumps(result, default = str), ex = 120)
+
+            return result
         
         except HTTPException:
             raise

@@ -1,4 +1,5 @@
 from sqlalchemy.ext.asyncio import AsyncSession
+import redis
 from models.answers import Answer
 from models.questions import Question
 from sqlalchemy import select
@@ -6,8 +7,10 @@ from uuid import UUID
 
 class Answer_Repository:
 
-    def __init__(self, session: AsyncSession):
+    def __init__(self, session: AsyncSession, cache: redis.Redis):
         self.session = session
+        self.cache = cache
+        self.cache_key = "answers"
 
     async def answer_question(self, user_id, question_id, answer) -> Answer:
         
@@ -28,10 +31,11 @@ class Answer_Repository:
 
         return result.scalar_one_or_none()
     
-    async def update_answer (self, new_answer: str, answer: Answer) -> None:
+    async def update_answer (self, new_answer: str, answer: Answer, user_key: str) -> None:
 
         answer.answer = new_answer
         await self.session.commit()
+        await self.cache.delete(user_key)
         await self.session.refresh(answer)
 
     async def get_answers_by_user (self, user_id) -> list[(Question, Answer)]:
