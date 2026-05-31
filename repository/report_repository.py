@@ -1,4 +1,5 @@
 from sqlalchemy.ext.asyncio import AsyncSession
+from redis.asyncio import Redis
 from models.reports import Report
 from models.analyses import Analysis
 from sqlalchemy import select, func
@@ -8,15 +9,18 @@ from utils.schemas import UpdatedReport
 
 class Report_Repository:
 
-    def __init__(self, session: AsyncSession):
+    def __init__(self, session: AsyncSession, cache: Redis):
         self.session = session
+        self.cache = cache
+        self.cache_key = "reports"
     
-    async def create_report (self, analysis_id: UUID) -> Report:
+    async def create_report (self, analysis_id: UUID, user_key: str) -> Report:
 
         new_report = Report(analysis_id = analysis_id)
 
         self.session.add(new_report)
         await self.session.commit()
+        await self.cache.delete(user_key)
         await self.session.refresh(new_report)
 
         return new_report
@@ -53,32 +57,36 @@ class Report_Repository:
 
         return result.scalar_one_or_none()
     
-    async def update_report (self, schema: UpdatedReport, report: Report) -> None:
+    async def update_report (self, schema: UpdatedReport, report: Report, user_key: str) -> None:
         
         report.report_title = schema.title
         await self.session.commit()
+        await self.cache.delete(user_key)
         await self.session.refresh(report)
 
-    async def update_report_done (self, report: Report, prompt: str, title: str, markdown: str) -> None:
+    async def update_report_done (self, report: Report, prompt: str, title: str, markdown: str, user_key: str) -> None:
 
         report.prompt = prompt
         report.report_title = title
         report.report_markdown = markdown
         await self.session.commit()
+        await self.cache.delete(user_key)
         await self.session.refresh(report)
 
-    async def update_report_failed (self, report: Report) -> None:
+    async def update_report_failed (self, report: Report, user_key: str) -> None:
+        
         report.prompt = "failed"
         report.report_title = "failed"
         report.report_markdown = "failed"
         await self.session.commit()
+        await self.cache.delete(user_key)
         await self.session.refresh(report)
 
     async def report_count (self, user_id: UUID):
         
         query = (select(func.count()).select_from(Report)
             .join(Report.analysis)
-            .filter(Analysis.user_id == user_id))
+            .filter(Analysis.user_id == user_id, Analysis.status == "done"))
 
         result = await self.session.execute(query)
 

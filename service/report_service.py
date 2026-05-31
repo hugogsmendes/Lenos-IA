@@ -10,6 +10,7 @@ from fastapi import HTTPException, BackgroundTasks, status
 from utils.exceptions import BadGateway, BadRequest
 from utils.processing import extract_youtube_video_id
 from utils.schemas import UpdatedReport
+from database.redis_client import get_redis
 from google import genai
 from google.genai import types, errors
 import json
@@ -171,9 +172,11 @@ class Report_Service:
                 
             new_analysis = await self.analysis_service.create_analysis(user_id, body.video_url, video_id)
 
-            new_report = await self.repository.create_report(new_analysis.id)
+            user_key = f"{self.repository.cache_key}_{user_id}"
+
+            new_report = await self.repository.create_report(new_analysis.id, user_key)
             
-            background_tasks.add_task(self.generate_report, video_id, new_report.id)
+            background_tasks.add_task(self.generate_report, video_id, new_report.id, user_key)
 
             return {
                 "report_id": new_report.id, "status": new_analysis.status
@@ -184,61 +187,66 @@ class Report_Service:
         except Exception:
             raise BadGateway
         
-    async def generate_report (self, video_id: str, report_id: uuid.UUID):
-        
-        async with SessionLocal() as session:
-            repository = Report_Repository(session)
-            analysis_repository = Analysis_Repository(session)
-            analysis_service = Analysis_Service(analysis_repository)
-                
-            report = await repository.get_report(report_id)
-            analysis = await analysis_repository.get_analysis_by_report_id(report_id)
+    async def generate_report (self, video_id: str, report_id: uuid.UUID, user_key: str):
 
-            try:
-                comments = await self.comment_service.get_comments_by_video_id(video_id)
-
-                processed_comments = self.comment_service.processing_comments(comments)
-
-                if not processed_comments:
-                    await analysis_service.update_analysis_failed(analysis)
-                    await repository.update_report_failed(report)
-                    return
-
-                report_markdown = await self.analyze_comments(processed_comments)
-
-                if not report_markdown:
-                    await analysis_service.update_analysis_failed(analysis)
-                    await repository.update_report_failed(report)
-                    return
-
-                await analysis_service.update_analysis_done(analysis)
+        redis_client = await get_redis()
+        try:
+            async with SessionLocal() as session:
+                repository = Report_Repository(session, redis_client)
+                analysis_repository = Analysis_Repository(session)
+                analysis_service = Analysis_Service(analysis_repository)
                     
-                title = "Sem Título"
-                match = re.search(r"## Título da Análise\s*\n\s*(.+)", report_markdown)
-                if match:
-                    title = match.group(1).strip().strip("[]*")
-
-                await repository.update_report_done(report, self.prompt, 
-                                                            title, report_markdown)
-                    
-            except HTTPException as e:
+                report = await repository.get_report(report_id)
+                analysis = await analysis_repository.get_analysis_by_report_id(report_id)
 
                 try:
-                    await analysis_service.update_analysis_failed(analysis)
-                    await repository.update_report_failed(report)
-                except Exception:
-                    pass
-                print(f"Handled HTTPException in background task: {e}")
-                return
-            except Exception as e:
 
-                try:
-                    await analysis_service.update_analysis_failed(analysis)
-                    await repository.update_report_failed(report)
-                except Exception:
-                    pass
-                print(f"Unexpected error in background task generate_report: {e}")
-                return
+                    comments = await self.comment_service.get_comments_by_video_id(video_id)
+
+                    processed_comments = self.comment_service.processing_comments(comments)
+
+                    if not processed_comments:
+                        await analysis_service.update_analysis_failed(analysis)
+                        await repository.update_report_failed(report, user_key)
+                        return
+
+                    report_markdown = await self.analyze_comments(processed_comments)
+
+                    if not report_markdown:
+                        await analysis_service.update_analysis_failed(analysis)
+                        await repository.update_report_failed(report, user_key)
+                        return
+
+                    await analysis_service.update_analysis_done(analysis)
+                        
+                    title = "Sem Título"
+                    match = re.search(r"## Título da Análise\s*\n\s*(.+)", report_markdown)
+                    if match:
+                        title = match.group(1).strip().strip("[]*")
+
+                    await repository.update_report_done(report, self.prompt, 
+                                                                title, report_markdown, user_key)
+                        
+                except HTTPException as e:
+
+                    try:
+                        await analysis_service.update_analysis_failed(analysis)
+                        await repository.update_report_failed(report, user_key)
+                    except Exception:
+                        pass
+                    print(f"Handled HTTPException in background task: {e}")
+                    return
+                except Exception as e:
+
+                    try:
+                        await analysis_service.update_analysis_failed(analysis)
+                        await repository.update_report_failed(report, user_key)
+                    except Exception:
+                        pass
+                    print(f"Unexpected error in background task generate_report: {e}")
+                    return
+        finally:
+            await redis_client.aclose()
         
     async def analyze_comments (self, comments: list) -> str:
 
@@ -308,10 +316,16 @@ class Report_Service:
     async def get_reports_by_user (self, user_id: uuid.UUID):
 
         try:
-            
+            user_key = f"{self.repository.cache_key}_{user_id}"
+
+            user_reports = await self.repository.cache.get(user_key)
+
+            if user_reports:
+                return json.loads(user_reports)
+
             res = await self.repository.get_reports_by_user(user_id)
 
-            return [
+            result = [
                 {
                     "id": report_id,
                     "title": title,
@@ -320,6 +334,10 @@ class Report_Service:
                     "status": status
                 }
             for report_id, title, url, report, status in res]
+
+            await self.repository.cache.set(user_key, json.dumps(result, default = str), ex = 120)
+
+            return result
         
         except HTTPException:
             raise
@@ -333,7 +351,9 @@ class Report_Service:
             
             report = await self.repository.get_report(schema.report_id)
 
-            return await self.repository.update_report(schema, report)
+            user_key = f"{self.repository.cache_key}_{user_id}"
+
+            return await self.repository.update_report(schema, report, user_key)
 
         except HTTPException:
             raise
@@ -343,9 +363,14 @@ class Report_Service:
     async def delete_report (self, report_id: uuid.UUID, user_id: uuid.UUID):
 
         try:
+            user_key = f"{self.repository.cache_key}_{user_id}"
 
-            return await self.analysis_service.delete_analysis(report_id, user_id)
+            await self.analysis_service.delete_analysis(report_id, user_id)
 
+            await self.repository.cache.delete(user_key)
+
+            return None
+        
         except HTTPException:
             raise
         except Exception:

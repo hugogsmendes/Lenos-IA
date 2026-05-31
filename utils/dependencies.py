@@ -1,6 +1,6 @@
 from collections.abc import AsyncGenerator
 from sqlalchemy.ext.asyncio import AsyncSession
-import redis
+from redis.asyncio import Redis
 from database.postgres import SessionLocal
 from database.redis_client import get_redis
 from fastapi import Depends, Request, HTTPException
@@ -44,13 +44,13 @@ def get_user_service(repository: User_Repository = Depends(get_user_repository),
                      email_service: Email_Service = Depends(get_email_service)):
     return User_Service(repository = repository, email_service = email_service)
 
-def get_question_repository(session: AsyncSession = Depends(get_session), cache: redis.Redis = Depends(get_session_redis)):
+def get_question_repository(session: AsyncSession = Depends(get_session), cache: Redis = Depends(get_session_redis)):
     return Question_Repository(session = session, cache = cache)
 
 def get_question_service(repository: Question_Repository = Depends(get_question_repository)):
     return Question_Service(repository = repository)
 
-def get_answer_repository(session: AsyncSession = Depends(get_session), cache: redis.Redis = Depends(get_session_redis)):
+def get_answer_repository(session: AsyncSession = Depends(get_session), cache: Redis = Depends(get_session_redis)):
     return Answer_Repository(session = session, cache = cache)
 
 def get_answer_service(repository: Answer_Repository = Depends(get_answer_repository),
@@ -69,7 +69,7 @@ def get_comment_repository(session: AsyncSession = Depends(get_session)):
 def get_comment_service(repository: Comment_Repository = Depends(get_comment_repository)):
     return Comment_Service(repository = repository)
 
-def get_report_repository(session: AsyncSession = Depends(get_session), cache: redis.Redis = Depends(get_session_redis)):
+def get_report_repository(session: AsyncSession = Depends(get_session), cache: Redis = Depends(get_session_redis)):
     return Report_Repository(session = session, cache = cache)
 
 def get_report_service(repository: Report_Repository = Depends(get_report_repository),

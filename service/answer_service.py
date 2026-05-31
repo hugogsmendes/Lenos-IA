@@ -33,7 +33,7 @@ class Answer_Service:
             
             answer = await self.repository.get_answer_by_user(user_id, body.question_id)
             
-            user_key = str(self.repository.cache_key + "_" + user_id)
+            user_key = f"{self.repository.cache_key}_{user_id}"
             return await self.repository.update_answer(body.new_answer, answer, user_key)
 
         except HTTPException:
@@ -44,7 +44,7 @@ class Answer_Service:
     async def get_answers_by_user (self, user_id):
         try:
 
-            user_key = str(self.repository.cache_key + "_" + user_id)
+            user_key = f"{self.repository.cache_key}_{user_id}"
 
             user_answers = await self.repository.cache.get(user_key)
 

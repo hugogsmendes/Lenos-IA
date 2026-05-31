@@ -2,7 +2,6 @@ from repository.question_repository import Question_Repository
 from fastapi import HTTPException
 from utils.exceptions import BadGateway
 import json
-from fastapi.encoders import jsonable_encoder
 
 class Question_Service:
 

@@ -1,5 +1,5 @@
 from sqlalchemy.ext.asyncio import AsyncSession
-import redis
+from redis.asyncio import Redis
 from models.answers import Answer
 from models.questions import Question
 from sqlalchemy import select
@@ -7,7 +7,7 @@ from uuid import UUID
 
 class Answer_Repository:
 
-    def __init__(self, session: AsyncSession, cache: redis.Redis):
+    def __init__(self, session: AsyncSession, cache: Redis):
         self.session = session
         self.cache = cache
         self.cache_key = "answers"
