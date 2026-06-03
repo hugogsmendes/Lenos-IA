@@ -44,16 +44,19 @@ async def me (current_user: dict = Depends(get_current_user_adm)):
     return current_user
 
 @user_router.put(path = "/update_user", status_code = status.HTTP_204_NO_CONTENT)
-async def update_user (response: Response, body: UpdateUser, service: User_Service = Depends(get_user_service), 
+@limiter.limit("10/minute")
+async def update_user (request: Request, response: Response, body: UpdateUser, service: User_Service = Depends(get_user_service), 
                        current_user: dict = Depends(get_current_user)):
     res = await service.update_user(body, current_user.get("email"))
     set_access_cookie(response, res.get("access_token"))
     set_refresh_cookie(response, res.get("refresh_token"))
 
 @user_router.put(path = "/update_password", status_code = status.HTTP_204_NO_CONTENT)
-async def update_password (body: UpdatePasswordUser, service: User_Service = Depends(get_user_service),
+async def update_password (response: Response, body: UpdatePasswordUser, service: User_Service = Depends(get_user_service),
                             current_user: dict = Depends(get_current_user)):
-    return await service.update_password(body, current_user.get("email"))
+    
+    await service.update_password(body, current_user.get("email"))
+    clear_auth_cookies(response)
 
 
 @user_router.delete(path = "/delete_user", status_code = status.HTTP_200_OK)

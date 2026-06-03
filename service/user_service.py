@@ -43,7 +43,7 @@ class User_Service:
         try:
             user = await self.repository.get_user_by_email(schema.email)
             
-            if not (user or verify_password(user.password_hash, schema.password)):
+            if not (user and verify_password(user.password_hash, schema.password)):
                 raise Unauthorized(detail = "Credencias inválidas")
             
             if not user.email_verified:
