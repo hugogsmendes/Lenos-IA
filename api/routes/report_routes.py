@@ -1,4 +1,6 @@
 from fastapi import APIRouter, Depends, status, Response, Request, BackgroundTasks
+from fastapi.responses import StreamingResponse
+import io
 from app.main import limiter
 from utils.dependencies import get_current_user
 from utils.schemas import GenerateReport, UpdatedReport
@@ -22,8 +24,16 @@ async def get_report_by_id (request: Request, id: UUID, service: Report_Service 
 
 @report_router.get(path = "/report/{id}/pdf", status_code = status.HTTP_200_OK)
 @limiter.limit("10/minute")
-async def get_report_pdf_by_id (request: Request, id: UUID, service: Report_Service = Depends(get_report_service), current_user: dict = Depends(get_current_user)):
-    ...
+async def get_report_pdf_by_id (request: Request, id: UUID,
+                                service: Report_Service = Depends(get_report_service), current_user: dict = Depends(get_current_user)):
+    
+    pdf_bytes, filename = await service.get_report_pdf_by_id(id, current_user.get("id"))
+    
+    return StreamingResponse(
+        io.BytesIO(pdf_bytes),
+        media_type = "application/pdf",
+        headers = {"Content-Disposition": f"attachment; filename={filename}.pdf"}
+    )
 
 @report_router.get(path = "/reports", status_code = status.HTTP_200_OK)
 @limiter.limit("10/minute")

@@ -129,6 +129,7 @@ O projeto segue um padrão de **Arquitetura em Camadas (Layered Architecture)** 
 *   `POST /generate_report`: Inicia análise de um vídeo (Background Task).
 *   `GET /reports`: Lista todos os relatórios do usuário.
 *   `GET /report/{id}`: Detalhes de um relatório específico.
+*   `GET /report/{id}/pdf`: Faz o download do relatório em formato PDF.
 *   `DELETE /delete_report/{id}`: Remove um relatório.
 
 ### Perguntas e Respostas (`/v1`)

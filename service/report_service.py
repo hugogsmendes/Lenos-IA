@@ -2,6 +2,7 @@ from database.postgres import SessionLocal
 from repository.analysis_repository import Analysis_Repository
 from dotenv import load_dotenv
 import os
+from models.reports import Report
 from repository.report_repository import Report_Repository
 from service.comment_service import Comment_Service
 from service.analysis_service import Analysis_Service
@@ -16,6 +17,8 @@ from google.genai import types, errors
 import json
 import uuid
 import re
+import asyncio
+from fpdf import FPDF
 
 
 load_dotenv()
@@ -375,4 +378,64 @@ class Report_Service:
             raise
         except Exception:
             raise BadGateway
+        
+    async def get_report_pdf_by_id (self, report_id: uuid.UUID, user_id: uuid.UUID):
+
+        try:
+
+            await self.analysis_service.get_analysis_by_report_id(report_id, user_id)
+
+            report = await self.repository.get_report(report_id)
+
+            pdf_bytes = await asyncio.to_thread(self.generate_pdf, report)
+            
+            return pdf_bytes, "Relatorio"
+
+        except HTTPException:
+            raise
+        except Exception as err:
+            raise BadGateway(detail = f"{err}")
+        
+    def generate_pdf (self, report: Report) -> bytes:
+
+        pdf = FPDF()
+        pdf.add_page()
+        pdf.set_auto_page_break(auto = True, margin = 15)
+        
+        pdf.set_font("Helvetica", "B", 16)
+        
+        def s(text):
+            if not text: return ""
+            text = text.replace("•", "-").replace("—", "-").replace("–", "-")
+            return text.encode("latin-1", "replace").decode("latin-1")
+
+        if report.report_markdown:
+            lines = report.report_markdown.split("\n")
+            for line in lines:
+                line = line.strip()
+                if not line:
+                    pdf.ln(5)
+                    continue
+                
+                pdf.set_x(pdf.l_margin)
+
+                if line.startswith("# "):
+                    pdf.set_font("Helvetica", "B", 14)
+                    pdf.multi_cell(pdf.epw, 10, s(line[2:]))
+                elif line.startswith("## "):
+                    pdf.set_font("Helvetica", "B", 13)
+                    pdf.multi_cell(pdf.epw, 10, s(line[3:]))
+                elif line.startswith("### "):
+                    pdf.set_font("Helvetica", "B", 12)
+                    pdf.multi_cell(pdf.epw, 10, s(line[4:]))
+                elif line.startswith("* ") or line.startswith("- "):
+                    pdf.set_font("Helvetica", size=11)
+                    pdf.multi_cell(pdf.epw, 7, f"  - {s(line[2:])}")
+                elif line.startswith("---"):
+                    pdf.ln(2)
+                else:
+                    pdf.set_font("Helvetica", size=11)
+                    pdf.multi_cell(pdf.epw, 7, s(line))
+        
+        return pdf.output()
 
