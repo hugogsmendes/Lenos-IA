@@ -11,7 +11,7 @@ class Email_Service:
 
     def __init__(self):
         self.email_from = os.getenv("email_from")
-        self.api = os.getenv("api")
+        self.api = os.getenv("front")
 
     def send_verification_email (self, to_email: str, token: str):
 
