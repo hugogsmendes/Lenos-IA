@@ -15,10 +15,11 @@ class Email_Service:
 
     def send_verification_email (self, to_email: str, token: str):
 
-        verification_url = f"{self.front}/v1/verify_email?token={token}"
 
         try:
 
+            verification_url = f"{self.front}/v1/verify_email?token={token}"
+            
             params = {
                 "from": self.email_from,
                 "to": [to_email],
@@ -32,5 +33,6 @@ class Email_Service:
 
             resend.Emails.send(params)
         
-        except Exception:
-            raise BadGateway
+        except Exception as e:
+            print(f"Unexpected error in background task send_verification_email: {e}")
+            return
