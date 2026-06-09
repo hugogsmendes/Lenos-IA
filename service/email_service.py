@@ -11,11 +11,11 @@ class Email_Service:
 
     def __init__(self):
         self.email_from = os.getenv("email_from")
-        self.api = os.getenv("front")
+        self.front = os.getenv("front")
 
     def send_verification_email (self, to_email: str, token: str):
 
-        verification_url = f"{self.api}/v1/verify_email?token={token}"
+        verification_url = f"{self.front}/v1/verify_email?token={token}"
 
         try:
 
