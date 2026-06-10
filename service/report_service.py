@@ -197,7 +197,6 @@ class Report_Service:
             async with SessionLocal() as session:
                 repository = Report_Repository(session, redis_client)
                 analysis_repository = Analysis_Repository(session)
-                analysis_service = Analysis_Service(analysis_repository)
                     
                 report = await repository.get_report(report_id)
                 analysis = await analysis_repository.get_analysis_by_report_id(report_id)
@@ -209,18 +208,18 @@ class Report_Service:
                     processed_comments = self.comment_service.processing_comments(comments)
 
                     if not processed_comments:
-                        await analysis_service.update_analysis_failed(analysis)
+                        await analysis_repository.update_analysis_failed(analysis)
                         await repository.update_report_failed(report, user_key)
                         return
 
                     report_markdown = await self.analyze_comments(processed_comments)
 
                     if not report_markdown:
-                        await analysis_service.update_analysis_failed(analysis)
+                        await analysis_repository.update_analysis_failed(analysis)
                         await repository.update_report_failed(report, user_key)
                         return
 
-                    await analysis_service.update_analysis_done(analysis)
+                    await analysis_repository.update_analysis_done(analysis)
                         
                     title = "Sem Título"
                     match = re.search(r"## Título da Análise\s*\n\s*(.+)", report_markdown)
@@ -230,23 +229,23 @@ class Report_Service:
                     await repository.update_report_done(report, self.prompt, 
                                                                 title, report_markdown, user_key)
                         
-                except HTTPException as e:
+                except Exception as e:
 
                     try:
-                        await analysis_service.update_analysis_failed(analysis)
+                        await analysis_repository.update_analysis_failed(analysis)
                         await repository.update_report_failed(report, user_key)
                     except Exception:
                         pass
-                    print(f"Handled HTTPException in background task: {e}")
+                    print(f"Handled Exception in background task: {e}")
                     return
                 except Exception as e:
 
                     try:
-                        await analysis_service.update_analysis_failed(analysis)
+                        await analysis_repository.update_analysis_failed(analysis)
                         await repository.update_report_failed(report, user_key)
                     except Exception:
                         pass
-                    print(f"Unexpected error in background task generate_report: {e}")
+                    print(f"Unexpected error in background task generate report: {e}")
                     return
         finally:
             await redis_client.aclose()
@@ -270,28 +269,11 @@ class Report_Service:
 
         except errors.APIError as e:
             print(f"Erro na API do Gemini: Código {e.code} - {e.message}")
+            return
         
-            if e.code == 429:
-                raise HTTPException(
-                    status_code = status.HTTP_429_TOO_MANY_REQUESTS,
-                    detail="Limite de requisições do Gemini atingido. Tente novamente em breve."
-                )
-            elif e.code == 403:
-                raise HTTPException(
-                    status_code = status.HTTP_403_FORBIDDEN,
-                    detail="Erro de autenticação na API de IA (Chave inválida ou expirada)."
-                )
-            else:
-                raise HTTPException(
-                    status_code = status.HTTP_502_BAD_GATEWAY,
-                    detail=f"O provedor de IA retornou um erro: {e.message}"
-                    )
         except Exception as e:
             print(f"Erro inesperado no Python: {str(e)}")
-            raise HTTPException(
-                status_code = status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Erro interno ao processar a análise do lote."
-            )
+            return
         
         
     async def get_report_by_id (self, report_id: uuid.UUID, user_id: uuid.UUID):

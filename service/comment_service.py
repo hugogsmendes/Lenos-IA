@@ -100,7 +100,8 @@ class Comment_Service:
         
         except googleapiclient.errors.HttpError as e:
             status_code = e.resp.status
-            raise BadGateway(detail =f"Erro ao buscar comentários do YouTube (HTTP {status_code}): {e.error_details}")
+            print(detail =f"Erro ao buscar comentários do YouTube (HTTP {status_code}): {e.error_details}")
+            return
         
     def processing_comments(self, comments: dict):
         try:
@@ -121,10 +122,9 @@ class Comment_Service:
 
             return processed_comments
 
-        except HTTPException:
-            raise
         except Exception as e:
-            raise BadGateway(detail = f"Erro ao processar comentários: {str(e)}")
+            print(f"Unexpected error in background task processing comments: {e}")
+            return
 
     def _clean_comment_text(self, text: str):
         if not text:

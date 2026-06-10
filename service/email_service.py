@@ -34,5 +34,5 @@ class Email_Service:
             resend.Emails.send(params)
         
         except Exception as e:
-            print(f"Unexpected error in background task send_verification_email: {e}")
+            print(f"Unexpected error in background task send verification email: {e}")
             return
