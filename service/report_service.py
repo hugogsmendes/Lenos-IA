@@ -366,7 +366,7 @@ class Report_Service:
 
         except HTTPException:
             raise
-        except Exception as er:
+        except Exception:
             raise BadGateway
         
     def generate_pdf (self, report: Report) -> bytes:
