@@ -100,7 +100,7 @@ class Comment_Service:
         
         except googleapiclient.errors.HttpError as e:
             status_code = e.resp.status
-            print(detail =f"Erro ao buscar comentários do YouTube (HTTP {status_code}): {e.error_details}")
+            print(f"Erro ao buscar comentários do YouTube (HTTP {status_code}): {e.error_details}")
             return
         
     def processing_comments(self, comments: dict):

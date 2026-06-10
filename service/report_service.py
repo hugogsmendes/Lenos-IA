@@ -236,15 +236,6 @@ class Report_Service:
                         await repository.update_report_failed(report, user_key)
                     except Exception:
                         pass
-                    print(f"Handled Exception in background task: {e}")
-                    return
-                except Exception as e:
-
-                    try:
-                        await analysis_repository.update_analysis_failed(analysis)
-                        await repository.update_report_failed(report, user_key)
-                    except Exception:
-                        pass
                     print(f"Unexpected error in background task generate report: {e}")
                     return
         finally:
