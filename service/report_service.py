@@ -320,12 +320,12 @@ class Report_Service:
         except Exception:
             raise BadGateway
     
-    async def update_report (self, schema: UpdatedReport, user_id: uuid.UUID):
+    async def update_report (self, report_id: uuid.UUID, schema: UpdatedReport, user_id: uuid.UUID):
         
         try:
-            await self.analysis_service.get_analysis_by_report_id(schema.report_id, user_id)
+            await self.analysis_service.get_analysis_by_report_id(report_id, user_id)
             
-            report = await self.repository.get_report(schema.report_id)
+            report = await self.repository.get_report(report_id)
 
             user_key = f"{self.repository.cache_key}_{user_id}"
 
@@ -367,7 +367,7 @@ class Report_Service:
         except HTTPException:
             raise
         except Exception as er:
-            raise BadGateway(detail = f"{er}")
+            raise BadGateway
         
     def generate_pdf (self, report: Report) -> bytes:
 

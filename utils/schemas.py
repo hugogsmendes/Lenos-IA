@@ -199,7 +199,6 @@ class UpdatedReport (BaseModel):
 
     model_config = ConfigDict(from_attributes = True, str_strip_whitespace = True)
 
-    report_id: UUID
     title: str = Field(..., min_length = 2, max_length = MAX_TITLE_LENGTH)
 
     @field_validator("title")

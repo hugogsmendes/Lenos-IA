@@ -97,8 +97,8 @@ class User_Service:
         
             update_user = await self.repository.update_user(schema, user)
 
-            access_token = create_access_token(update_user.id, update_user.name, update_user.email, update_user.phone)
-            refresh_token = create_refresh_token(update_user.id, update_user.name, update_user.email, update_user.phone)
+            access_token = create_access_token(update_user.id, update_user.name, update_user.email, update_user.phone, update_user.role)
+            refresh_token = create_refresh_token(update_user.id, update_user.name, update_user.email, update_user.phone, update_user.role)
 
             return {
                 "access_token": access_token,
