@@ -366,8 +366,8 @@ class Report_Service:
 
         except HTTPException:
             raise
-        except Exception:
-            raise BadGateway
+        except Exception as er:
+            raise BadGateway(detail = f"{er}")
         
     def generate_pdf (self, report: Report) -> bytes:
 
@@ -375,40 +375,89 @@ class Report_Service:
         pdf.add_page()
         pdf.set_auto_page_break(auto = True, margin = 15)
         
-        pdf.set_font("Helvetica", "B", 16)
-        
         def s(text):
             if not text: return ""
-            text = text.replace("•", "-").replace("—", "-").replace("–", "-")
-            return text.encode("latin-1", "replace").decode("latin-1")
+            return text.replace("•", "-").replace("—", "-").replace("–", "-")
 
-        if report.report_markdown:
-            lines = report.report_markdown.split("\n")
-            for line in lines:
-                line = line.strip()
-                if not line:
-                    pdf.ln(5)
-                    continue
-                
-                pdf.set_x(pdf.l_margin)
+        lines = report.report_markdown.split("\n") if report.report_markdown else []
+        table_data = []
 
-                if line.startswith("# "):
-                    pdf.set_font("Helvetica", "B", 14)
-                    pdf.multi_cell(pdf.epw, 10, s(line[2:]))
-                elif line.startswith("## "):
-                    pdf.set_font("Helvetica", "B", 13)
-                    pdf.multi_cell(pdf.epw, 10, s(line[3:]))
-                elif line.startswith("### "):
-                    pdf.set_font("Helvetica", "B", 12)
-                    pdf.multi_cell(pdf.epw, 10, s(line[4:]))
-                elif line.startswith("* ") or line.startswith("- "):
-                    pdf.set_font("Helvetica", size=11)
-                    pdf.multi_cell(pdf.epw, 7, f"  - {s(line[2:])}")
-                elif line.startswith("---"):
-                    pdf.ln(2)
-                else:
-                    pdf.set_font("Helvetica", size=11)
-                    pdf.multi_cell(pdf.epw, 7, s(line))
+        def render_table(data):
+            if not data: return
+            
+            clean_data = []
+            for row in data:
+                is_separator = all(re.match(r"^[\s\-:]+$", cell) for cell in row)
+                if not is_separator:
+                    clean_data.append(row)
+            
+            if not clean_data: return
+
+            pdf.set_font("Helvetica", "B", 10)
+            with pdf.table(
+                borders_layout="HORIZONTAL_LINES",
+                cell_fill_color=245,
+                cell_fill_mode="ROWS",
+                line_height=8,
+                text_align="CENTER"
+            ) as table:
+                for i, data_row in enumerate(clean_data):
+                    row = table.row()
+                    if i == 0:
+                        pdf.set_font("Helvetica", "B", 10)
+                    else:
+                        pdf.set_font("Helvetica", size=10)
+                        
+                    for cell in data_row:
+                    
+                        row.cell(s(cell.strip()))
+            pdf.ln(5)
+
+        pdf.set_font("Helvetica", size=11)
+
+        for line in lines:
+            line_strip = line.strip()
+            
+            if line_strip.startswith("|") and line_strip.endswith("|"):
+                parts = [p.strip() for p in line_strip.split("|")][1:-1]
+                if parts:
+                    table_data.append(parts)
+                continue
+            else:
+                if table_data:
+                    render_table(table_data)
+                    table_data = []
+
+            if not line_strip:
+                pdf.ln(3)
+                continue
+
+            pdf.set_x(pdf.l_margin)
+
+            if line_strip.startswith("# "):
+                pdf.set_font("Helvetica", "B", 18)
+                pdf.multi_cell(0, 10, s(line_strip[2:]), markdown=True)
+                pdf.ln(4)
+            elif line_strip.startswith("## "):
+                pdf.set_font("Helvetica", "B", 15)
+                pdf.multi_cell(0, 10, s(line_strip[3:]), markdown=True)
+                pdf.ln(3)
+            elif line_strip.startswith("### "):
+                pdf.set_font("Helvetica", "B", 13)
+                pdf.multi_cell(0, 8, s(line_strip[4:]), markdown=True)
+                pdf.ln(2)
+            elif line_strip.startswith("* ") or line_strip.startswith("- "):
+                pdf.set_font("Helvetica", size=11)
+                pdf.multi_cell(0, 7, f"  - {s(line_strip[2:])}", markdown=True)
+            elif line_strip.startswith("---"):
+                pdf.ln(2)
+                pdf.line(pdf.l_margin, pdf.get_y(), pdf.w - pdf.r_margin, pdf.get_y())
+                pdf.ln(4)
+            else:
+                pdf.set_font("Helvetica", size=11)
+                pdf.multi_cell(0, 7, s(line_strip), markdown=True)
+
+        if table_data:
+            render_table(table_data)
         
         return pdf.output()
-
