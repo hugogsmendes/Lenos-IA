@@ -104,7 +104,7 @@ async def get_current_user(request: Request, credential: HTTPAuthorizationCreden
     
 async def get_current_user_adm (current_user: dict = Depends(get_current_user)):
     
-    if current_user.get("role") != "admin":
+    if not current_user.get("role") == "admin":
         raise Forbidden
     
     return current_user
