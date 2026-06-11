@@ -178,7 +178,6 @@ class UpdateAnswer (BaseModel):
 
     model_config = ConfigDict(from_attributes = True, str_strip_whitespace = True)
 
-    question_id: UUID
     new_answer: str = Field(..., min_length = 1, max_length = MAX_ANSWER_LENGTH)
 
     @field_validator("new_answer")

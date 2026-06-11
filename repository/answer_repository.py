@@ -23,9 +23,9 @@ class Answer_Repository:
 
         return new_anser
     
-    async def get_answer_by_user (self, user_id: UUID, question_id: UUID) -> Answer:
+    async def get_answer_by_user (self, id: UUID, user_id: UUID,) -> Answer:
 
-        query = select(Answer).filter((Answer.user_id == user_id) & (Answer.question_id == question_id))
+        query = select(Answer).filter((Answer.id == id) & (Answer.user_id == user_id))
 
         result = await self.session.execute(query)
 

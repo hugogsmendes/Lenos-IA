@@ -2,7 +2,7 @@ from repository.answer_repository import Answer_Repository
 from repository.question_repository import Question_Repository
 from utils.schemas import AnswerQuestion, UpdateAnswer
 from fastapi import HTTPException
-from utils.exceptions import BadGateway, NotFound
+from utils.exceptions import BadGateway, NotFound, BadRequest
 import json
 
 class Answer_Service:
@@ -25,13 +25,11 @@ class Answer_Service:
         except Exception:
             raise BadGateway
         
-    async def update_answer (self, body: UpdateAnswer, user_id):
+    async def update_answer (self, id, body: UpdateAnswer, user_id):
         try:
-            question = await self.question_repository.get_question_by_id(body.question_id)
-            if not question:
-                raise NotFound("Question")
-            
-            answer = await self.repository.get_answer_by_user(user_id, body.question_id)
+            answer = await self.repository.get_answer_by_user(id, user_id)
+            if not answer:
+                raise BadRequest
             
             user_key = f"{self.repository.cache_key}_{user_id}"
             return await self.repository.update_answer(body.new_answer, answer, user_key)
