@@ -75,3 +75,13 @@ class Analysis_Service:
             raise
         except Exception:
             raise BadGateway
+        
+    async def get_analysis_by_youtube_video_id (self, youtube_video_id: str, user_id: uuid.UUID):
+        try:
+
+            return await self.repository.get_analysis_by_youtube_video_id(youtube_video_id, user_id)
+
+        except HTTPException:
+            raise
+        except Exception:
+            raise BadGateway

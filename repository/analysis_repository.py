@@ -29,6 +29,15 @@ class Analysis_Repository:
 
         return result.scalar_one_or_none()
     
+    async def get_analysis_by_youtube_video_id (self, youtube_video_id: str, user_id: UUID) -> str:
+
+        query = (select(Analysis.youtube_video_id).filter(Analysis.youtube_video_id == youtube_video_id,
+                                                        Analysis.user_id == user_id, Analysis.status == "done"))
+
+        result = await self.session.execute(query)
+
+        return result.scalar_one_or_none()
+    
     async def delete_analysis (self, analysis: Analysis) -> None:
 
         await self.session.delete(analysis)

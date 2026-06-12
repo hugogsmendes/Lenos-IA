@@ -165,7 +165,13 @@ class Report_Service:
 
             if not video_id:
                 raise BadRequest
-    
+            
+            exists_report_by_video_id = await self.analysis_service.get_analysis_by_youtube_video_id(video_id, user_id)
+
+            if exists_report_by_video_id:
+                raise HTTPException(status_code = status.HTTP_429_TOO_MANY_REQUESTS,
+                                    detail = f"Relatório do vídeo id: {video_id} já gerado")
+
             await self.comment_service.verify_video_exists(video_id)
                 
             new_analysis = await self.analysis_service.create_analysis(user_id, body.video_url, video_id)
