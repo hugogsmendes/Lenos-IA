@@ -6,11 +6,10 @@ from models.reports import Report
 from repository.report_repository import Report_Repository
 from service.comment_service import Comment_Service
 from service.analysis_service import Analysis_Service
-from utils.schemas import GenerateReport
+from utils.schemas import GenerateReport, UpdatedReport
 from fastapi import HTTPException, BackgroundTasks, status
 from utils.exceptions import BadGateway, BadRequest
 from utils.processing import extract_youtube_video_id
-from utils.schemas import UpdatedReport
 from database.redis_client import get_redis
 from google import genai
 from google.genai import types, errors
@@ -55,9 +54,11 @@ class Report_Service:
 
             Regras obrigatórias:
 
-            * Retorne a resposta exclusivamente em Markdown válido
+            * Retorne um JSON com as seguinte estrutura: {titulo: Título curto, criativo e chamativo, markdown: Relatório em markdown}
+
+            * O título não pode ter mais de 50 caracteres
             * Não utilize HTML
-            * Utilize títulos, subtítulos, listas e tabelas em Markdown quando necessário
+            * Utilize títulos, subtítulos, listas e tabelas no Markdown quando necessário
             * Não escreva explicações fora da estrutura solicitada
             * Não invente informações inexistentes
             * Utilize linguagem analítica, objetiva e profissional
@@ -65,12 +66,6 @@ class Report_Service:
             * A soma dos sentimentos deve resultar em aproximadamente 100
 
             Estrutura obrigatória da resposta em Markdown:
-
-            # Relatório de Feedback do Vídeo
-
-            ## Título da Análise
-
-            [Título curto contextualizado]
 
             ---
 
@@ -212,22 +207,20 @@ class Report_Service:
                         await repository.update_report_failed(report, user_key)
                         return
 
-                    report_markdown = await self.analyze_comments(processed_comments)
+                    report_dict = await self.analyze_comments(processed_comments)
 
-                    if not report_markdown:
+                    if not report_dict:
                         await analysis_repository.update_analysis_failed(analysis)
                         await repository.update_report_failed(report, user_key)
                         return
 
                     await analysis_repository.update_analysis_done(analysis)
                         
-                    title = "Sem Título"
-                    match = re.search(r"## Título da Análise\s*\n\s*(.+)", report_markdown)
-                    if match:
-                        title = match.group(1).strip().strip("[]*")
+                    title = report_dict.get("titulo")
+                    markdown = report_dict.get("markdown",)
 
                     await repository.update_report_done(report, self.prompt, 
-                                                                title, report_markdown, user_key)
+                                                                title, markdown, user_key)
                         
                 except Exception as e:
 
@@ -241,7 +234,7 @@ class Report_Service:
         finally:
             await redis_client.aclose()
         
-    async def analyze_comments (self, comments: list) -> str:
+    async def analyze_comments (self, comments: list) -> dict:
 
         try:
             
@@ -253,10 +246,11 @@ class Report_Service:
                     system_instruction = self.prompt,
                     temperature = 0.2,
                     max_output_tokens = 2000,
+                    response_mime_type = "application/json"
                 ),
                 contents = f"Analise os seguintes comentários:\n{content_for_gemini}"
             )
-            return response.text
+            return json.loads(response.text)
 
         except errors.APIError as e:
             print(f"Erro na API do Gemini: Código {e.code} - {e.message}")
@@ -378,6 +372,11 @@ class Report_Service:
         def s(text):
             if not text: return ""
             return text.replace("•", "-").replace("—", "-").replace("–", "-")
+
+        if report.report_title:
+            pdf.set_font("Helvetica", "B", 22)
+            pdf.multi_cell(0, 12, s(report.report_title), align='C')
+            pdf.ln(10)
 
         lines = report.report_markdown.split("\n") if report.report_markdown else []
         table_data = []
