@@ -4,6 +4,9 @@ from utils.schemas import AnswerQuestion, UpdateAnswer
 from fastapi import HTTPException
 from utils.exceptions import BadGateway, NotFound, BadRequest
 import json
+from utils.logging import get_logger
+
+logger = get_logger("answer_service")
 
 class Answer_Service:
 
@@ -16,27 +19,35 @@ class Answer_Service:
         try:
             question = await self.question_repository.get_question_by_id(body.question_id)
             if not question:
+                logger.warning("Answer attempt failed: question %s not found", body.question_id)
                 raise NotFound("Question")
-                        
-            return await self.repository.answer_question(user_id, body.question_id, body.answer)
+            
+            result = await self.repository.answer_question(user_id, body.question_id, body.answer)
+            logger.info("Question %s answered successfully by user %s", body.question_id, user_id)
+            return result
 
         except HTTPException:
             raise
-        except Exception:
+        except Exception as e:
+            logger.error("Unexpected error answering question %s by user %s: %s", body.question_id, user_id, str(e), exc_info=True)
             raise BadGateway
         
     async def update_answer (self, id, body: UpdateAnswer, user_id):
         try:
             answer = await self.repository.get_answer_by_user(id, user_id)
             if not answer:
+                logger.warning("Answer update failed: answer %s not found or not owned by user %s", id, user_id)
                 raise BadRequest
             
             user_key = f"{self.repository.cache_key}_{user_id}"
-            return await self.repository.update_answer(body.new_answer, answer, user_key)
+            result = await self.repository.update_answer(body.new_answer, answer, user_key)
+            logger.info("Answer %s updated successfully by user %s", id, user_id)
+            return result
 
         except HTTPException:
             raise
-        except Exception:
+        except Exception as e:
+            logger.error("Unexpected error updating answer %s by user %s: %s", id, user_id, str(e), exc_info=True)
             raise BadGateway
     
     async def get_answers_by_user (self, user_id):
@@ -47,6 +58,7 @@ class Answer_Service:
             user_answers = await self.repository.cache.get(user_key)
 
             if user_answers:
+                logger.info("Retrieved answers from cache for user %s", user_id)
                 return json.loads(user_answers)
 
             res = await self.repository.get_answers_by_user(user_id)
@@ -62,9 +74,11 @@ class Answer_Service:
 
             await self.repository.cache.set(user_key, json.dumps(result, default = str), ex = 120)
 
+            logger.info("Retrieved answers from database for user %s and updated cache", user_id)
             return result
         
         except HTTPException:
             raise
-        except Exception:
+        except Exception as e:
+            logger.error("Unexpected error getting answers for user %s: %s", user_id, str(e), exc_info=True)
             raise BadGateway

@@ -7,6 +7,9 @@ import googleapiclient.errors
 from utils.exceptions import BadGateway, BadRequest, NotFound, Forbidden
 from fastapi import HTTPException
 import asyncio
+from utils.logging import get_logger
+
+logger = get_logger("comment_service")
 
 
 load_dotenv()
@@ -44,6 +47,7 @@ class Comment_Service:
     async def verify_video_exists (self, video_id: str):
 
         try:
+            logger.info("Verifying existence of video %s on YouTube", video_id)
             request = self.youtube_service.videos().list(
                 part = "snippet",
                 id = video_id
@@ -52,12 +56,15 @@ class Comment_Service:
             response = await asyncio.to_thread(request.execute)
             
             if response.get("pageInfo", {}).get("totalResults", 0) == 0:
+                logger.warning("Video %s not found on YouTube", video_id)
                 raise NotFound(register = video_id, detail = "não encontrado no YouTube")
             
+            logger.info("Video %s verified successfully", video_id)
             return
         
         except googleapiclient.errors.HttpError as e:
             status_code = e.resp.status
+            logger.warning("YouTube API error (HTTP %s) verifying video %s: %s", status_code, video_id, str(e))
             
             if status_code == 404:
                 raise NotFound(register = video_id, detail = "não encontrado no Youtube")
@@ -67,11 +74,13 @@ class Comment_Service:
                 raise BadRequest(detail = f"Video ID inválido")
 
         except Exception as e:
+            logger.error("Unexpected error verifying video %s: %s", video_id, str(e), exc_info=True)
             raise BadRequest(detail = f"Erro {str(e)}")
 
     async def get_comments_by_video_id (self, video_id: str, max_comments: int = 200):
 
         try:
+            logger.info("Fetching up to %s comments for video %s", max_comments, video_id)
             all_items = []
             next_page_token = None
             
@@ -96,15 +105,17 @@ class Comment_Service:
                 if not next_page_token:
                     break
             
+            logger.info("Fetched %s comments for video %s", len(all_items), video_id)
             return {"items": all_items[:max_comments], "pageInfo": response.get("pageInfo", {})}
         
         except googleapiclient.errors.HttpError as e:
             status_code = e.resp.status
-            print(f"Erro ao buscar comentários do YouTube (HTTP {status_code}): {e.error_details}")
+            logger.error("YouTube API error (HTTP %s) fetching comments for video %s: %s", status_code, video_id, str(e.error_details))
             return
         
     def processing_comments(self, comments: dict):
         try:
+            logger.info("Processing comments (cleaning emojis and whitespace)")
             items = comments.get("items", []) if isinstance(comments, dict) else comments
 
             processed_comments = []
@@ -120,10 +131,11 @@ class Comment_Service:
                 if cleaned_text:
                     processed_comments.append(cleaned_text)
 
+            logger.info("Processed %s comments successfully", len(processed_comments))
             return processed_comments
 
         except Exception as e:
-            print(f"Unexpected error in background task processing comments: {e}")
+            logger.error("Unexpected error in background task processing comments: %s", str(e), exc_info=True)
             return
 
     def _clean_comment_text(self, text: str):

@@ -2,6 +2,9 @@ from dotenv import load_dotenv
 import os
 from utils.exceptions import BadGateway
 import resend
+from utils.logging import get_logger
+
+logger = get_logger("email_service")
 
 load_dotenv()
 
@@ -17,7 +20,7 @@ class Email_Service:
 
 
         try:
-
+            logger.info("Sending verification email to %s", to_email)
             verification_url = f"{self.front}/v1/verify_email?token={token}"
             
             params = {
@@ -32,7 +35,8 @@ class Email_Service:
             }
 
             resend.Emails.send(params)
+            logger.info("Verification email sent successfully to %s", to_email)
         
         except Exception as e:
-            print(f"Unexpected error in background task send verification email: {e}")
+            logger.error("Unexpected error in background task sending verification email to %s: %s", to_email, str(e), exc_info=True)
             return
