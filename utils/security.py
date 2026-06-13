@@ -4,6 +4,9 @@ from argon2 import PasswordHasher
 from argon2.exceptions import VerificationError
 import jwt
 from datetime import datetime, timedelta, timezone
+from utils.logging import get_logger
+
+logger = get_logger("security")
 
 load_dotenv()
 
@@ -42,6 +45,7 @@ def create_access_token (user_id, name, email, phone, role, token_duration = tim
     }
 
     encoded_jwt = jwt.encode(payload, SECRET_KEY, algorithm = ALGORITHM)
+    logger.info("Access token created for user_id: %s", user_id)
     return encoded_jwt
 
 def create_refresh_token (user_id, name, email, phone, role, token_duration = timedelta(seconds = REFRESH_TOKEN_EXPIRE)):
@@ -58,6 +62,7 @@ def create_refresh_token (user_id, name, email, phone, role, token_duration = ti
     }
 
     encoded_jwt = jwt.encode(payload, SECRET_KEY, algorithm = ALGORITHM)
+    logger.info("Refresh token created for user_id: %s", user_id)
     return encoded_jwt
 
 def create_email_token (email, token_duration = timedelta(hours = 24)):
@@ -70,6 +75,7 @@ def create_email_token (email, token_duration = timedelta(hours = 24)):
     }
 
     encoded_jwt = jwt.encode(payload, SECRET_KEY, algorithm = ALGORITHM)
+    logger.info("Email verification token created for: %s", email)
     return encoded_jwt  
 
 def verify_token_jwt (token_jwt: str, expected_type: str | None = None):
@@ -78,12 +84,17 @@ def verify_token_jwt (token_jwt: str, expected_type: str | None = None):
         payload = jwt.decode(token_jwt, SECRET_KEY, algorithms = [ALGORITHM])
 
         if expected_type and payload.get("type") != expected_type:
+            logger.warning("Token type mismatch. Expected: %s, Got: %s", expected_type, payload.get("type"))
             return None
 
         return payload
 
-    except jwt.InvalidTokenError:
-        return None
-    
     except jwt.ExpiredSignatureError:
+        logger.warning("Token verification failed: signature expired")
+        return None
+    except jwt.InvalidTokenError as e:
+        logger.warning("Token verification failed: invalid token - %s", str(e))
+        return None
+    except Exception as e:
+        logger.error("Unexpected error during token verification: %s", str(e))
         return None

@@ -20,6 +20,9 @@ from service.report_service import Report_Service
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from utils.exceptions import BadGateway, Forbidden
 from utils.security import verify_token_jwt
+from utils.logging import get_logger
+
+logger = get_logger("dependencies")
 
 security = HTTPBearer(auto_error = False)
 
@@ -82,13 +85,16 @@ async def get_current_user(request: Request, credential: HTTPAuthorizationCreden
     try:
         token = request.cookies.get("access_token")
         if not token:
+            logger.warning("Authentication failed: No access_token found in cookies")
             raise Forbidden
     
         payload = verify_token_jwt(token, "access")
 
         if not payload:
+            logger.warning("Authentication failed: Invalid or expired token")
             raise Forbidden
         
+        logger.info("User authenticated: %s (id: %s)", payload.get("email"), payload.get("sub"))
         return {
             "id": payload.get("sub"),
             "name": payload.get("name"),
@@ -99,12 +105,15 @@ async def get_current_user(request: Request, credential: HTTPAuthorizationCreden
 
     except HTTPException:
         raise
-    except Exception:
+    except Exception as e:
+        logger.error("Unexpected error in get_current_user: %s", str(e), exc_info=True)
         raise BadGateway
     
 async def get_current_user_adm (current_user: dict = Depends(get_current_user)):
     
     if not current_user.get("role") == "admin":
+        logger.warning("Authorization failed: User %s does not have admin role", current_user.get("email"))
         raise Forbidden
     
+    logger.info("Admin user authorized: %s", current_user.get("email"))
     return current_user
