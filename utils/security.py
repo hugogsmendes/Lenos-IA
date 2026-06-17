@@ -78,6 +78,19 @@ def create_email_token (email, token_duration = timedelta(hours = 24)):
     logger.info("Email verification token created for: %s", email)
     return encoded_jwt  
 
+def create_password_token (email, token_duration = timedelta(hours = 24)):
+    expire = datetime.now(timezone.utc) + token_duration
+
+    payload = {
+        "email": email,
+        "exp": expire,
+        "type": "password_verification"
+    }
+
+    encoded_jwt = jwt.encode(payload, SECRET_KEY, algorithm = ALGORITHM)
+    logger.info("Password verification token created for: %s", email)
+    return encoded_jwt 
+
 def verify_token_jwt (token_jwt: str, expected_type: str | None = None):
 
     try:

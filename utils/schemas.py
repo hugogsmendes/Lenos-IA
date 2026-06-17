@@ -126,6 +126,35 @@ class UpdatePasswordUser (BaseModel):
 
         return value
 
+class ForgotPassword (BaseModel):
+
+    model_config = ConfigDict(from_attributes = True)
+
+    email: EmailStr
+
+class ResetPassword (BaseModel):
+
+    model_config = ConfigDict(from_attributes = True)
+
+    token: str
+    new_password: str
+
+    @field_validator("new_password")
+    @classmethod
+    def validate_password(cls, value: str) -> str:
+        if len(value) < 8:
+            raise ValueError("A senha deve conter no minimo 8 caracteres.")
+        if not re.search(r"[a-z]", value):
+            raise ValueError("A senha deve conter pelo menos 1 letra minuscula.")
+        if not re.search(r"[A-Z]", value):
+            raise ValueError("A senha deve conter pelo menos 1 letra maiuscula.")
+        if not re.search(r"[0-9]", value):
+            raise ValueError("A senha deve conter pelo menos 1 numero.")
+        if not re.search(r"[^A-Za-z0-9]", value):
+            raise ValueError("A senha deve conter pelo menos 1 caractere especial.")
+
+        return value
+
 class CreateQuestion (BaseModel):
 
     model_config = ConfigDict(from_attributes = True, str_strip_whitespace = True)

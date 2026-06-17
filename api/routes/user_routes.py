@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, status, Response, Request, BackgroundTasks
-from utils.schemas import ResponseUser, RegisterUser, LoginUser, UpdateUser, UpdatePasswordUser
+from utils.schemas import ResponseUser, RegisterUser, LoginUser, UpdateUser, UpdatePasswordUser, ForgotPassword, ResetPassword
 from app.main import limiter
 from service.user_service import User_Service
 from utils.dependencies import get_user_service, get_current_user, get_current_user_adm
@@ -74,3 +74,19 @@ async def verify_email (request: Request, token: str, service: User_Service = De
     await service.verify_email(token)
 
     return {"message": "Email verificado com sucesso"}
+
+@user_router.post(path = "/forgot_password", status_code = status.HTTP_200_OK)
+@limiter.limit("5/minute")
+async def forgot_password (request: Request, body: ForgotPassword, service: User_Service = Depends(get_user_service)):
+
+    await service.forgot_password(body)
+
+    return {"message": "Email para redefinir senha enviado"}
+
+@user_router.post(path = "/reset_password", status_code = status.HTTP_200_OK)
+@limiter.limit("5/minute")
+async def reset_password (request: Request, body: ResetPassword, service: User_Service = Depends(get_user_service)):
+    
+    await service.reset_password(body)
+
+    return {"message": "Senha redefinida com sucesso"}

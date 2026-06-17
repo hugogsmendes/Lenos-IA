@@ -1,11 +1,13 @@
 from repository.user_repository import User_Repository
 from service.email_service import Email_Service
-from utils.schemas import RegisterUser, LoginUser, UpdateUser, UpdatePasswordUser
+from utils.schemas import RegisterUser, LoginUser, UpdateUser, UpdatePasswordUser, ForgotPassword, ResetPassword
 from utils.exceptions import Conflict, BadRequest, NotFound, Unauthorized, BadGateway
 from fastapi import BackgroundTasks
-from utils.security import verify_password, create_email_token, create_access_token, create_refresh_token, verify_token_jwt
+from utils.security import verify_password, create_email_token, create_password_token, create_access_token, create_refresh_token, verify_token_jwt
 from fastapi import HTTPException, Request
 from utils.logging import get_logger
+import asyncio
+
 
 logger = get_logger("user_service")
 
@@ -194,4 +196,54 @@ class User_Service:
         except Exception as e:
             logger.error("Unexpected error during email verification: %s", str(e), exc_info=True)
             raise BadGateway
+    
+    async def forgot_password (self, schema: ForgotPassword):
+
+        try:
+
+            user = await self.repository.get_user_by_email(schema.email)
+
+            if not user:
+                logger.warning("Forgot password failed: user %s not found", schema.email)
+                raise NotFound(register = schema.email)
+            
+            token_password = create_password_token(user.email)
+
+            await asyncio.to_thread(self.email_service.send_verification_password_email, user.email, token_password)
+            return
+            
+        except HTTPException:
+            raise
+        except Exception as e:
+            logger.error("Unexpected error during forgot password: %s", str(e), exc_info=True)
+            raise BadGateway
+        
+    async def reset_password (self, schema: ResetPassword):
+
+        try:
+
+            payload = verify_token_jwt(schema.token, "password_verification")
+
+            if not payload:
+                logger.warning("Reset password failed: invalid token")
+                raise BadRequest
+            
+            email = payload.get("email")
+
+            user = await self.repository.get_user_by_email(email)
+
+            if not user:
+                logger.warning("Reset password failed: user %s not found", email)
+                raise NotFound(register = email)
+            
+            result = await self.repository.update_password(schema.new_password, user)
+            logger.info("Password updated successfully for user: %s", email)
+            return result
+            
+        except HTTPException:
+            raise
+        except Exception as e:
+            logger.error("Unexpected error during reset password: %s", str(e), exc_info=True)
+            raise BadGateway
+
 

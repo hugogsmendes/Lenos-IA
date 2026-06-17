@@ -40,3 +40,28 @@ class Email_Service:
         except Exception as e:
             logger.error("Unexpected error in background task sending verification email to %s: %s", to_email, str(e), exc_info=True)
             return
+        
+    def send_verification_password_email (self, to_email: str, token: str):
+
+
+        try:
+            logger.info("Sending verification password to %s", to_email)
+            verification_url = f"{self.front}/v1/reset_password?token={token}"
+            
+            params = {
+                "from": self.email_from,
+                "to": [to_email],
+                "subject": "Altere sua senha",
+                "html": f"""
+                    <h1>Bem-vindo à Lenos IA</h1>
+                    <p>Clique no link abaixo para alterar sua senha:</p>
+                    <a href="{verification_url}">Alterar Senha</a>
+                """
+            }
+
+            resend.Emails.send(params)
+            logger.info("Verification password sent successfully to %s", to_email)
+        
+        except Exception as e:
+            logger.error("Unexpected error in background task sending verification password email to %s: %s", to_email, str(e), exc_info=True)
+            return
