@@ -5,6 +5,7 @@ from slowapi.errors import RateLimitExceeded
 from utils.logging import configure_logging, get_logger
 from middlewares.logging import logging_middleware
 from contextlib import asynccontextmanager
+from fastapi.middleware.cors import CORSMiddleware
 
 configure_logging()
 logger = get_logger("app")
@@ -21,6 +22,13 @@ app = FastAPI(
     title = "Lenos IA",
     version = "1.0.0",
     lifespan = lifespan
+)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins = ["https://api.lenos-ia.com.br", "https://app.lenos-ia.com.br", "http://localhost:5173"],    
+    allow_credentials = True,     
+    allow_methods = ["*"],      
+    allow_headers = ["*"],     
 )
 
 app.middleware("http")(logging_middleware)
