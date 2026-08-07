@@ -1,20 +1,19 @@
-from dotenv import load_dotenv
-import os
 from argon2 import PasswordHasher
 from argon2.exceptions import VerificationError
 import jwt
 from datetime import datetime, timedelta, timezone
 from utils.logging import get_logger
+from core.config import Settings
 
 logger = get_logger("security")
 
-load_dotenv()
+settings = Settings()
 
-PEPPER = str(os.getenv("pepper"))
-SECRET_KEY = os.getenv("SECRET_KEY")
-ALGORITHM = os.getenv("ALGORITHM")
-ACCESS_TOKEN_EXPIRE = int(os.getenv("ACCESS_TOKEN_EXPIRE"))
-REFRESH_TOKEN_EXPIRE = int(os.getenv("REFRESH_TOKEN_EXPIRE"))
+PEPPER = settings.pepper
+SECRET_KEY = settings.SECRET_KEY
+ALGORITHM = settings.ALGORITHM
+ACCESS_TOKEN_EXPIRE = settings.ACCESS_TOKEN_EXPIRE
+REFRESH_TOKEN_EXPIRE = settings.REFRESH_TOKEN_EXPIRE
 
 argon = PasswordHasher()
 

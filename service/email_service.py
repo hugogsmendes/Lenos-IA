@@ -1,20 +1,18 @@
-from dotenv import load_dotenv
-import os
-from utils.exceptions import BadGateway
+from core.config import Settings
 import resend
 from utils.logging import get_logger
 
 logger = get_logger("email_service")
 
-load_dotenv()
+settings = Settings()
 
-resend.api_key = os.getenv("key_resend")
+resend.api_key = settings.key_resend
 
 class Email_Service:
 
     def __init__(self):
-        self.email_from = os.getenv("email_from")
-        self.front = os.getenv("front")
+        self.email_from = settings.email_from
+        self.front = settings.front
 
     def send_verification_email (self, to_email: str, token: str):
 

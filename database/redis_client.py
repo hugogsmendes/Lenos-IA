@@ -1,10 +1,9 @@
 from redis.asyncio import Redis, ConnectionPool
-from dotenv import load_dotenv
-import os
+from core.config import Settings
 
-load_dotenv()
+settings = Settings()
 
-REDIS_URL = os.getenv("REDIS_URL")
+REDIS_URL = settings.REDIS_URL
 
 pool = ConnectionPool.from_url(
     url = REDIS_URL,

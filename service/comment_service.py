@@ -1,18 +1,15 @@
-from dotenv import load_dotenv
 from repository.comment_repository import Comment_Repository
-import os
 import re
 import googleapiclient.discovery
 import googleapiclient.errors
-from utils.exceptions import BadGateway, BadRequest, NotFound, Forbidden
-from fastapi import HTTPException
+from utils.exceptions import BadRequest, NotFound, Forbidden
 import asyncio
 from utils.logging import get_logger
+from core.config import Settings
 
 logger = get_logger("comment_service")
 
-
-load_dotenv()
+settings = Settings()
 
 _EMOJI_PATTERN = re.compile(
     "["
@@ -41,7 +38,7 @@ class Comment_Service:
         self.repository = repository
         self.api_service_name = "youtube"
         self.api_version = "v3"
-        self._api_key = os.getenv("key_youtube")
+        self._api_key = settings.key_youtube
         self.youtube_service = googleapiclient.discovery.build(self.api_service_name, self.api_version, developerKey = self._api_key)
 
     async def verify_video_exists (self, video_id: str):

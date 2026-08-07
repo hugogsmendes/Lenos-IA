@@ -1,14 +1,13 @@
-from dotenv import load_dotenv
-import os
+from core.config import Settings
 from fastapi import Response
 
-load_dotenv()
+settings = Settings()
 
-ACCESS_TOKEN_EXPIRE = int(os.getenv("ACCESS_TOKEN_EXPIRE"))
-REFRESH_TOKEN_EXPIRE = int(os.getenv("REFRESH_TOKEN_EXPIRE"))
+ACCESS_TOKEN_EXPIRE = settings.ACCESS_TOKEN_EXPIRE
+REFRESH_TOKEN_EXPIRE = settings.REFRESH_TOKEN_EXPIRE
 ACCESS_COOKIE_NAME = "access_token"
 REFRESH_COOKIE_NAME = "refresh_token"
-ENV = os.getenv("ENV")
+ENV = settings.ENV
 
 def _cookie_kwargs(duration: int) -> dict:
     if ENV == "prod":

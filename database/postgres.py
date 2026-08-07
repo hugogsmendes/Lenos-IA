@@ -1,15 +1,13 @@
-from dotenv import load_dotenv
-import os 
+from core.config import Settings
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
 from sqlalchemy.orm import declarative_base
 from sqlalchemy.pool import NullPool
-import asyncio
 
-load_dotenv()
+settings = Settings()
 
-DATABASE_URL = os.getenv("DATABASE_URL_TRANSACTION")
+DATABASE_URL_TRANSACTION = settings.DATABASE_URL_TRANSACTION
                     
-engine = create_async_engine(DATABASE_URL,
+engine = create_async_engine(DATABASE_URL_TRANSACTION,
                              pool_pre_ping = True,
                              poolclass = NullPool,
                              echo = False, # False em produção

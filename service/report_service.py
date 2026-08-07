@@ -1,7 +1,5 @@
 from database.postgres import SessionLocal
 from repository.analysis_repository import Analysis_Repository
-from dotenv import load_dotenv
-import os
 from models.reports import Report
 from repository.report_repository import Report_Repository
 from service.comment_service import Comment_Service
@@ -19,11 +17,11 @@ import re
 import asyncio
 from fpdf import FPDF
 from utils.logging import get_logger
+from core.config import Settings
 
 logger = get_logger("report_service")
 
-
-load_dotenv()
+settings = Settings()
 
 class Report_Service:
 
@@ -32,7 +30,7 @@ class Report_Service:
         self.repository = repository
         self.comment_service = comment_service
         self.analysis_service = analysis_service
-        self._api_key = os.getenv("key_gemini")
+        self._api_key = settings.key_gemini
         self.gemini_service = genai.Client(api_key = self._api_key)
         self.model = "gemini-2.5-flash-lite"
         self.prompt = """
