@@ -1,7 +1,7 @@
 from collections.abc import AsyncGenerator
 from sqlalchemy.ext.asyncio import AsyncSession
 from redis.asyncio import Redis
-from database.postgres import SessionLocal
+from database.postgres_client import SessionLocal
 from database.redis_client import get_redis
 from fastapi import Depends, Request, HTTPException
 from repository.user_repository import User_Repository

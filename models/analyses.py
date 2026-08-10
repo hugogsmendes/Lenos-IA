@@ -1,5 +1,5 @@
 from typing import TYPE_CHECKING
-from database.postgres import Base
+from database.postgres_client import Base
 from uuid import uuid4
 from datetime import datetime
 from sqlalchemy import DateTime, String, func, ForeignKey, Enum

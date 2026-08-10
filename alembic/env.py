@@ -29,7 +29,7 @@ if config.config_file_name is not None:
 # for 'autogenerate' support
 # from myapp import mymodel
 # target_metadata = mymodel.Base.metadata
-from database.postgres import Base
+from database.postgres_client import Base
 
 from models.users import User
 from models.analyses import Analysis

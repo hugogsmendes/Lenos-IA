@@ -1,4 +1,4 @@
-from database.postgres import SessionLocal
+from database.postgres_client import SessionLocal
 from repository.analysis_repository import Analysis_Repository
 from models.reports import Report
 from repository.report_repository import Report_Repository
