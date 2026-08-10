@@ -43,7 +43,7 @@ async def me (current_user: dict = Depends(get_current_user)):
 async def me_adm (current_user: dict = Depends(get_current_user_adm)):
     return current_user
 
-@user_router.put(path = "/update", status_code = status.HTTP_204_NO_CONTENT)
+@user_router.put(path = "", status_code = status.HTTP_204_NO_CONTENT)
 @limiter.limit("10/minute")
 async def update_user (request: Request, response: Response, body: UpdateUser, service: User_Service = Depends(get_user_service), 
                        current_user: dict = Depends(get_current_user)):
@@ -51,7 +51,7 @@ async def update_user (request: Request, response: Response, body: UpdateUser, s
     set_access_token_cookie(response, result.get("access_token"))
     set_refresh_token_cookie(response, result.get("refresh_token"))
 
-@user_router.put(path = "/update-password", status_code = status.HTTP_204_NO_CONTENT)
+@user_router.put(path = "/password", status_code = status.HTTP_204_NO_CONTENT)
 async def update_password (response: Response, body: UpdatePasswordUser, service: User_Service = Depends(get_user_service),
                             current_user: dict = Depends(get_current_user)):
     
@@ -59,7 +59,7 @@ async def update_password (response: Response, body: UpdatePasswordUser, service
     clear_tokens_cookies(response)
 
 
-@user_router.delete(path = "/delete", status_code = status.HTTP_204_NO_CONTENT)
+@user_router.delete(path = "", status_code = status.HTTP_204_NO_CONTENT)
 async def delete_user (response: Response, service: User_Service = Depends(get_user_service), 
                        current_user: dict = Depends(get_current_user)):
 
