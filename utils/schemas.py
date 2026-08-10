@@ -174,13 +174,6 @@ class ResponseQuestion (BaseModel):
 
     description: str
 
-class ResponseAnswersByUser(BaseModel):
-
-    model_config = ConfigDict(from_attributes = True)
-
-    question: str
-    answer: str
-
 class AnswerQuestion (BaseModel):
 
     model_config = ConfigDict(from_attributes = True, str_strip_whitespace = True)

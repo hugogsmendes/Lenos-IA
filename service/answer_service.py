@@ -5,6 +5,7 @@ from fastapi import HTTPException
 from utils.exceptions import BadGateway, NotFound, BadRequest
 import json
 from utils.logging import get_logger
+from uuid import UUID
 
 logger = get_logger("answer_service")
 
@@ -14,35 +15,35 @@ class Answer_Service:
         self.repository = repository
         self.question_repository = question_repository
 
-    async def answer_question(self, body: AnswerQuestion, user_id):
+    async def answer_question(self, schema: AnswerQuestion, user_id: str):
 
         try:
-            question = await self.question_repository.get_question_by_id(body.question_id)
+            question = await self.question_repository.get_question_by_id(schema.question_id)
             if not question:
-                logger.warning("Answer attempt failed: question %s not found", body.question_id)
+                logger.warning("Answer attempt failed: question %s not found", schema.question_id)
                 raise NotFound("Question")
             
-            result = await self.repository.answer_question(user_id, body.question_id, body.answer)
-            logger.info("Question %s answered successfully by user %s", body.question_id, user_id)
-            return result
+            new_answer = await self.repository.answer_question(user_id, schema.question_id, schema.answer)
+            logger.info("Question %s answered successfully by user %s", schema.question_id, user_id)
+            return new_answer
 
         except HTTPException:
             raise
         except Exception as e:
-            logger.error("Unexpected error answering question %s by user %s: %s", body.question_id, user_id, str(e), exc_info=True)
+            logger.error("Unexpected error answering question %s by user %s: %s", schema.question_id, user_id, str(e), exc_info=True)
             raise BadGateway
         
-    async def update_answer (self, id, body: UpdateAnswer, user_id):
+    async def update_answer (self, id: UUID, schema: UpdateAnswer, user_id: str):
         try:
             answer = await self.repository.get_answer_by_user(id, user_id)
             if not answer:
                 logger.warning("Answer update failed: answer %s not found or not owned by user %s", id, user_id)
                 raise BadRequest
             
-            user_key = f"{self.repository.cache_key}_{user_id}"
-            result = await self.repository.update_answer(body.new_answer, answer, user_key)
+            user_answers_key = f"{self.repository.cache_key}_{user_id}"
+            update_answer = await self.repository.update_answer(schema.new_answer, answer, user_answers_key)
             logger.info("Answer %s updated successfully by user %s", id, user_id)
-            return result
+            return update_answer
 
         except HTTPException:
             raise
@@ -50,18 +51,18 @@ class Answer_Service:
             logger.error("Unexpected error updating answer %s by user %s: %s", id, user_id, str(e), exc_info=True)
             raise BadGateway
     
-    async def get_answers_by_user (self, user_id):
+    async def get_answers_by_user (self, user_id: str):
         try:
 
-            user_key = f"{self.repository.cache_key}_{user_id}"
+            user_answers_key = f"{self.repository.cache_key}_{user_id}"
 
-            user_answers = await self.repository.cache.get(user_key)
+            answers_cache = await self.repository.cache.get(user_answers_key)
 
-            if user_answers:
+            if answers_cache:
                 logger.info("Retrieved answers from cache for user %s", user_id)
-                return json.loads(user_answers)
+                return json.loads(answers_cache)
 
-            res = await self.repository.get_answers_by_user(user_id)
+            answers = await self.repository.get_answers_by_user(user_id)
             
             result = [
                 {
@@ -70,9 +71,9 @@ class Answer_Service:
                     "answer_id": answer_id,
                     "answer": answer,
                 }
-            for question_id, description, answer_id, answer in res]
+            for question_id, description, answer_id, answer in answers]
 
-            await self.repository.cache.set(user_key, json.dumps(result, default = str), ex = 120)
+            await self.repository.cache.set(user_answers_key, json.dumps(result, default = str), ex = 3600)
 
             logger.info("Retrieved answers from database for user %s and updated cache", user_id)
             return result

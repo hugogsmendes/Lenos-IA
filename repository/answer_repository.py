@@ -12,7 +12,7 @@ class Answer_Repository:
         self.cache = cache
         self.cache_key = "answers"
 
-    async def answer_question(self, user_id, question_id, answer) -> Answer:
+    async def answer_question(self, user_id: str, question_id: UUID, answer: str) -> Answer:
         
         new_anser = Answer(user_id = user_id,
                            question_id = question_id,
@@ -23,7 +23,7 @@ class Answer_Repository:
 
         return new_anser
     
-    async def get_answer_by_user (self, id: UUID, user_id: UUID,) -> Answer:
+    async def get_answer_by_user (self, id: UUID, user_id: str) -> Answer | None:
 
         query = select(Answer).filter((Answer.id == id) & (Answer.user_id == user_id))
 
@@ -31,16 +31,16 @@ class Answer_Repository:
 
         return result.scalar_one_or_none()
     
-    async def update_answer (self, new_answer: str, answer: Answer, user_key: str) -> None:
+    async def update_answer (self, new_answer: str, answer: Answer, cache_key: str) -> None:
 
         answer.answer = new_answer
         await self.session.commit()
-        await self.cache.delete(user_key)
+        await self.cache.delete(cache_key)
         await self.session.refresh(answer)
 
-    async def get_answers_by_user (self, user_id) -> list[(Question, Answer)]:
+    async def get_answers_by_user (self, user_id: str) -> list[(Question, Answer)]:
         
-        query = select(Question.id, Question.description, Answer.id, Answer.answer).join(Question.answers).filter(Answer.user_id == user_id)
+        query = select(Question.id, Question.description, Answer.id, Answer.answer).join(Answer.question).filter(Answer.user_id == user_id)
 
         result = await self.session.execute(query)
 

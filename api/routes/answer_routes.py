@@ -7,7 +7,7 @@ from uuid import UUID
 
 answer_router = APIRouter(prefix = "/v1/user", tags = ["answer"])
 
-@answer_router.post(path = "/answer_question", status_code = status.HTTP_201_CREATED, response_model = ResponseAnswerQuestion)
+@answer_router.post(path = "/answer", status_code = status.HTTP_201_CREATED, response_model = ResponseAnswerQuestion)
 @limiter.limit("10/minute")
 async def answer_question(request: Request, body: AnswerQuestion, service: Answer_Service = Depends(get_answer_service),
                           current_user = Depends(get_current_user)):
@@ -15,14 +15,14 @@ async def answer_question(request: Request, body: AnswerQuestion, service: Answe
     return await service.answer_question(body, current_user.get("id"))
 
     
-@answer_router.put(path = "/update_answer/{id}", status_code = status.HTTP_204_NO_CONTENT)
+@answer_router.put(path = "/answer/{id}", status_code = status.HTTP_204_NO_CONTENT)
 @limiter.limit("10/minute")
 async def update_answer(request: Request, id: UUID, body: UpdateAnswer, service: Answer_Service = Depends(get_answer_service),
                         current_user = Depends(get_current_user)):
         
     return await service.update_answer(id, body, current_user.get("id"))
 
-@answer_router.get(path = "/answers_questions", status_code = status.HTTP_200_OK)
+@answer_router.get(path = "/answers", status_code = status.HTTP_200_OK)
 @limiter.limit("10/minute")
 async def get_answers_by_user(request: Request, service: Answer_Service = Depends(get_answer_service),
                          current_user: dict = Depends(get_current_user)):
