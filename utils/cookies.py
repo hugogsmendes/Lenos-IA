@@ -30,7 +30,7 @@ def _cookie_kwargs(duration: int) -> dict:
         }
 
 
-def set_access_cookie(response: Response, token: str) -> None:
+def set_access_token_cookie(response: Response, token: str) -> None:
     response.set_cookie(
         key = ACCESS_COOKIE_NAME,
         value = token,
@@ -38,14 +38,14 @@ def set_access_cookie(response: Response, token: str) -> None:
     )
 
 
-def set_refresh_cookie(response: Response, token: str) -> None:
+def set_refresh_token_cookie(response: Response, token: str) -> None:
     response.set_cookie(
         key = REFRESH_COOKIE_NAME,
         value = token,
         **_cookie_kwargs(REFRESH_TOKEN_EXPIRE),
     )
 
-def clear_auth_cookies(response: Response) -> None:
+def clear_tokens_cookies(response: Response) -> None:
 
     if ENV == "prod":
         response.delete_cookie(

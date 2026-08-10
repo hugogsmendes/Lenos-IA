@@ -2,9 +2,8 @@ from repository.user_repository import User_Repository
 from service.email_service import Email_Service
 from utils.schemas import RegisterUser, LoginUser, UpdateUser, UpdatePasswordUser, ForgotPassword, ResetPassword
 from utils.exceptions import Conflict, BadRequest, NotFound, Unauthorized, BadGateway
-from fastapi import BackgroundTasks
-from utils.security import verify_password, create_email_token, create_password_token, create_access_token, create_refresh_token, verify_token_jwt
-from fastapi import HTTPException, Request
+from utils.security import verify_password, create_email_verification_token, create_password_reset_token, create_access_token, create_refresh_token, verify_token_jwt
+from fastapi import HTTPException, Request, BackgroundTasks
 from utils.logging import get_logger
 import asyncio
 
@@ -18,7 +17,7 @@ class User_Service:
         self.repository = repository
         self.email_service = email_service
 
-    async def create_user (self, schema: RegisterUser, background_tasks: BackgroundTasks):
+    async def register (self, schema: RegisterUser, background_tasks: BackgroundTasks):
 
         try:
 
@@ -34,9 +33,9 @@ class User_Service:
         
             new_user = await self.repository.create_user(schema)
 
-            token_email = create_email_token(new_user.email)
+            email_verification_token = create_email_verification_token(new_user.email)
 
-            background_tasks.add_task(self.email_service.send_verification_email, new_user.email, token_email)
+            background_tasks.add_task(self.email_service.send_verification_email, new_user.email, email_verification_token)
 
             logger.info("User successfully created: %s", new_user.email)
             return new_user
@@ -52,7 +51,7 @@ class User_Service:
         try:
             user = await self.repository.get_user_by_email(schema.email)
             
-            if not (user and verify_password(user.password_hash, schema.password)):
+            if not user or not verify_password(user.password_hash, schema.password):
                 logger.warning("Login failed: invalid credentials for email %s", schema.email)
                 raise Unauthorized(detail = "Credencias inválidas")
             
@@ -106,7 +105,7 @@ class User_Service:
                 logger.warning("User update failed: user %s not found", email)
                 raise NotFound(register = email)
 
-            if schema.email and schema.email != user.email:
+            if schema.email != user.email:
                 exists_user = await self.repository.get_user_by_email(schema.email)
 
                 if exists_user:
@@ -139,9 +138,9 @@ class User_Service:
                 logger.warning("Password update failed: invalid current password for %s", email)
                 raise Unauthorized(detail = "Credencias inválidas")
             
-            result = await self.repository.update_password(schema.new_password, user)
+            await self.repository.update_password(schema.new_password, user)
             logger.info("Password updated successfully for user: %s", email)
-            return result
+            return None
 
         except HTTPException:
             raise
@@ -159,9 +158,9 @@ class User_Service:
                 logger.warning("User deletion failed: user %s not found", email)
                 raise NotFound(register = email)
             
-            result = await self.repository.delete_user(user)
+            await self.repository.delete_user(user)
             logger.info("User deleted successfully: %s", email)
-            return result
+            return None
         
         except HTTPException:
             raise
@@ -187,9 +186,9 @@ class User_Service:
                 logger.warning("Email verification failed: user %s not found", email)
                 raise NotFound(register = email)
             
-            result = await self.repository.update_email_verified(user)
+            await self.repository.update_email_verified(user)
             logger.info("Email verified successfully for: %s", email)
-            return result
+            return None
                 
         except HTTPException:
             raise
@@ -207,10 +206,10 @@ class User_Service:
                 logger.warning("Forgot password failed: user %s not found", schema.email)
                 raise NotFound(register = schema.email)
             
-            token_password = create_password_token(user.email)
+            password_reset_token = create_password_reset_token(user.email)
 
-            await asyncio.to_thread(self.email_service.send_verification_password_email, user.email, token_password)
-            return
+            await asyncio.to_thread(self.email_service.send_reset_password_email, user.email, password_reset_token)
+            return None
             
         except HTTPException:
             raise
@@ -218,11 +217,11 @@ class User_Service:
             logger.error("Unexpected error during forgot password: %s", str(e), exc_info=True)
             raise BadGateway
         
-    async def reset_password (self, schema: ResetPassword):
+    async def reset_password (self, token: str, schema: ResetPassword):
 
         try:
 
-            payload = verify_token_jwt(schema.token, "password_verification")
+            payload = verify_token_jwt(token, "password_reset")
 
             if not payload:
                 logger.warning("Reset password failed: invalid token")
@@ -236,9 +235,9 @@ class User_Service:
                 logger.warning("Reset password failed: user %s not found", email)
                 raise NotFound(register = email)
             
-            result = await self.repository.update_password(schema.new_password, user)
+            await self.repository.update_password(schema.new_password, user)
             logger.info("Password updated successfully for user: %s", email)
-            return result
+            return None
             
         except HTTPException:
             raise

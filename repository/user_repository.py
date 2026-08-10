@@ -9,7 +9,7 @@ class User_Repository:
     def __init__(self, session: AsyncSession):
         self.session = session
 
-    async def get_user_by_email (self, email: str) -> User:
+    async def get_user_by_email (self, email: str) -> User | None:
 
         query = select(User).filter(User.email == email)
 

@@ -19,7 +19,7 @@ class Email_Service:
 
         try:
             logger.info("Sending verification email to %s", to_email)
-            verification_url = f"{self.front}/v1/verify_email?token={token}"
+            verification_url = f"{self.front}/v1/verify-email?token={token}"
             
             params = {
                 "from": self.email_from,
@@ -39,12 +39,12 @@ class Email_Service:
             logger.error("Unexpected error in background task sending verification email to %s: %s", to_email, str(e), exc_info=True)
             return
         
-    def send_verification_password_email (self, to_email: str, token: str):
+    def send_reset_password_email (self, to_email: str, token: str):
 
 
         try:
             logger.info("Sending verification password to %s", to_email)
-            verification_url = f"{self.front}/v1/reset_password?token={token}"
+            verification_url = f"{self.front}/v1/reset-password?token={token}"
             
             params = {
                 "from": self.email_from,

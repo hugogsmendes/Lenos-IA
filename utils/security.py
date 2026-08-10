@@ -4,6 +4,7 @@ import jwt
 from datetime import datetime, timedelta, timezone
 from utils.logging import get_logger
 from core.config import Settings
+from uuid import UUID
 
 logger = get_logger("security")
 
@@ -30,7 +31,7 @@ def verify_password (hashed_password: str, password: str):
     except VerificationError:
         return False
 
-def create_access_token (user_id, name, email, phone, role, token_duration = timedelta(seconds = ACCESS_TOKEN_EXPIRE)):
+def create_access_token (user_id: UUID, name: str, email: str, phone: str, role: str, token_duration = timedelta(seconds = ACCESS_TOKEN_EXPIRE)):
     expire = datetime.now(timezone.utc) + token_duration
 
     payload = {
@@ -47,7 +48,7 @@ def create_access_token (user_id, name, email, phone, role, token_duration = tim
     logger.info("Access token created for user_id: %s", user_id)
     return encoded_jwt
 
-def create_refresh_token (user_id, name, email, phone, role, token_duration = timedelta(seconds = REFRESH_TOKEN_EXPIRE)):
+def create_refresh_token (user_id: UUID, name: str, email: str, phone: str, role: str, token_duration = timedelta(seconds = REFRESH_TOKEN_EXPIRE)):
     expire = datetime.now(timezone.utc) + token_duration
 
     payload = {
@@ -64,7 +65,7 @@ def create_refresh_token (user_id, name, email, phone, role, token_duration = ti
     logger.info("Refresh token created for user_id: %s", user_id)
     return encoded_jwt
 
-def create_email_token (email, token_duration = timedelta(hours = 24)):
+def create_email_verification_token (email: str, token_duration = timedelta(hours = 24)):
     expire = datetime.now(timezone.utc) + token_duration
 
     payload = {
@@ -77,17 +78,17 @@ def create_email_token (email, token_duration = timedelta(hours = 24)):
     logger.info("Email verification token created for: %s", email)
     return encoded_jwt  
 
-def create_password_token (email, token_duration = timedelta(hours = 24)):
+def create_password_reset_token (email: str, token_duration = timedelta(hours = 24)):
     expire = datetime.now(timezone.utc) + token_duration
 
     payload = {
         "email": email,
         "exp": expire,
-        "type": "password_verification"
+        "type": "password_reset"
     }
 
     encoded_jwt = jwt.encode(payload, SECRET_KEY, algorithm = ALGORITHM)
-    logger.info("Password verification token created for: %s", email)
+    logger.info("Password reset token created for: %s", email)
     return encoded_jwt 
 
 def verify_token_jwt (token_jwt: str, expected_type: str | None = None):
