@@ -21,7 +21,7 @@ class Question_Repository:
 
         return new_question
     
-    async def get_question_by_id (self, question_id: UUID) -> Question:
+    async def get_question_by_id (self, question_id: UUID) -> Question| None:
 
         query = select(Question).filter(Question.id == question_id)
 

@@ -6,7 +6,7 @@ from utils.dependencies import get_question_service, get_current_user, get_curre
 
 question_router = APIRouter(prefix = "/v1", tags = ["question"])
 
-@question_router.post(path = "/create_question", status_code = status.HTTP_201_CREATED, response_model = ResponseQuestion)
+@question_router.post(path = "/question", status_code = status.HTTP_201_CREATED, response_model = ResponseQuestion)
 @limiter.limit("10/minute")
 async def create_question(request: Request, body: CreateQuestion, service: Question_Service = Depends(get_question_service),
                           current_user: dict = Depends(get_current_user_adm)):

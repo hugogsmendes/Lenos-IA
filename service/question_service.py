@@ -26,22 +26,22 @@ class Question_Service:
     async def list_questions (self):
         try:
 
-            questions = await self.repository.cache.get(self.repository.cache_key)
+            questions_cache = await self.repository.cache.get(self.repository.cache_key)
 
-            if questions:
+            if questions_cache:
                 logger.info("Retrieved questions from cache")
-                return json.loads(questions)
+                return json.loads(questions_cache)
             
-            res = await self.repository.list_questions()
+            questions = await self.repository.list_questions()
 
             result = [
                 {
                     "id": question.id,
                     "question": question.description
                 }
-            for question in res]
+            for question in questions]
 
-            await self.repository.cache.set(self.repository.cache_key, json.dumps(result, default = str), ex = 120)
+            await self.repository.cache.set(self.repository.cache_key, json.dumps(result, default = str), ex = 3600)
 
             logger.info("Retrieved questions from database and updated cache")
             return result
