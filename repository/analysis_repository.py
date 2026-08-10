@@ -9,7 +9,7 @@ class Analysis_Repository:
     def __init__(self, session: AsyncSession):
         self.session = session
 
-    async def create_analysis(self, user_id: UUID, video_url: str, youtube_video_id: str) -> Analysis:
+    async def create_analysis(self, user_id: str, video_url: str, youtube_video_id: str) -> Analysis:
         
         new_analysis = Analysis(user_id = user_id,
                                video_url = video_url,
@@ -21,15 +21,15 @@ class Analysis_Repository:
 
         return new_analysis
     
-    async def get_analysis_by_report_id (self, report_id: UUID) -> Analysis:
+    async def get_analysis_by_report_id (self, report_id: UUID, user_id: str) -> Analysis | None:
 
-        query = select(Analysis).join(Analysis.report).filter(Report.id == report_id)
+        query = select(Analysis).join(Analysis.report).filter(Report.id == report_id, Analysis.user_id == user_id)
 
         result = await self.session.execute(query)
 
         return result.scalar_one_or_none()
     
-    async def get_analysis_by_youtube_video_id (self, youtube_video_id: str, user_id: UUID) -> str:
+    async def get_analysis_by_youtube_video_id (self, youtube_video_id: str, user_id: str) -> str:
 
         query = (select(Analysis.youtube_video_id).filter(Analysis.youtube_video_id == youtube_video_id,
                                                         Analysis.user_id == user_id, Analysis.status == "done"))

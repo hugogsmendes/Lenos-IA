@@ -10,7 +10,7 @@ from uuid import UUID
 
 report_router = APIRouter(prefix = "/v1/user", tags = ["report"])
 
-@report_router.post(path = "/generate_report", status_code = status.HTTP_201_CREATED)
+@report_router.post(path = "/generate-report", status_code = status.HTTP_201_CREATED)
 @limiter.limit("1/minute")
 async def create_report (request: Request, body: GenerateReport, background_tasks: BackgroundTasks,
                         service: Report_Service = Depends(get_report_service), current_user: dict = Depends(get_current_user)):
@@ -40,13 +40,12 @@ async def get_report_pdf_by_id (request: Request, id: UUID,
 async def get_reports_by_user (request: Request, service: Report_Service = Depends(get_report_service), current_user: dict = Depends(get_current_user)):
     return await service.get_reports_by_user(current_user.get("id"))
 
-@report_router.put(path = "/update_report/{id}", status_code = status.HTTP_204_NO_CONTENT)
+@report_router.put(path = "/report/{id}", status_code = status.HTTP_204_NO_CONTENT)
 @limiter.limit("10/minute")
 async def update_report(request: Request, id: UUID, body: UpdatedReport, service: Report_Service = Depends(get_report_service), current_user: dict = Depends(get_current_user)):
     return await service.update_report(id, body, current_user.get("id"))
 
-@report_router.delete(path = "/delete_report/{id}", status_code = status.HTTP_200_OK)
+@report_router.delete(path = "/report/{id}", status_code = status.HTTP_204_NO_CONTENT)
 @limiter.limit("10/minute")
 async def delete_report(request: Request, id: UUID, service: Report_Service = Depends(get_report_service), current_user: dict = Depends(get_current_user)):
-    await service.delete_report(id, current_user.get("id"))
-    return {"message": "Relatório deletado com sucesso"}
+    return await service.delete_report(id, current_user.get("id"))

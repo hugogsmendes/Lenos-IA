@@ -1,7 +1,7 @@
 from repository.analysis_repository import Analysis_Repository
 from fastapi import HTTPException
 from utils.exceptions import BadGateway, BadRequest, Forbidden
-import uuid
+from uuid import UUID
 from models.analyses import Analysis
 from utils.logging import get_logger
 
@@ -14,7 +14,7 @@ class Analysis_Service:
     def __init__(self, repository: Analysis_Repository):
         self.repository = repository
 
-    async def create_analysis(self, user_id: uuid.UUID, video_url: str, youtube_video_id: str):
+    async def create_analysis(self, user_id: str, video_url: str, youtube_video_id: str):
         
         try:
             logger.info("Creating new analysis for user %s, video %s", user_id, youtube_video_id)
@@ -27,18 +27,14 @@ class Analysis_Service:
             logger.error("Failed to create analysis for video %s: %s", youtube_video_id, str(e), exc_info=True)
             raise BadGateway
         
-    async def get_analysis_by_report_id (self, report_id: uuid.UUID, user_id: uuid.UUID): 
+    async def get_analysis_by_report_id (self, report_id: UUID, user_id: str): 
 
         try:
-            analysis = await self.repository.get_analysis_by_report_id(report_id)
+            analysis = await self.repository.get_analysis_by_report_id(report_id, user_id)
 
             if not analysis:
-                logger.warning("Analysis not found for report_id %s", report_id)
+                logger.warning("Analysis not found for report_id or trying to access analysis of user %s", report_id)
                 raise BadRequest
-            
-            if str(analysis.user_id) != str(user_id):
-                logger.warning("Access forbidden: user %s trying to access analysis of user %s", user_id, analysis.user_id)
-                raise Forbidden
 
             return analysis
         
@@ -48,13 +44,13 @@ class Analysis_Service:
             logger.error("Error retrieving analysis for report_id %s: %s", report_id, str(e), exc_info=True)
             raise BadGateway
         
-    async def delete_analysis (self, report_id: uuid.UUID, user_id: uuid.UUID):
+    async def delete_analysis (self, report_id: UUID, user_id: str):
 
         try:
             analysis = await self.get_analysis_by_report_id(report_id, user_id)
-            result = await self.repository.delete_analysis(analysis)
+            await self.repository.delete_analysis(analysis)
             logger.info("Analysis deleted successfully for report_id %s", report_id)
-            return result
+            return None
 
         except HTTPException:
             raise
@@ -84,7 +80,7 @@ class Analysis_Service:
             logger.error("Error updating analysis to DONE for video %s: %s", analysis.youtube_video_id, str(e), exc_info=True)
             raise BadGateway
         
-    async def get_analysis_by_youtube_video_id (self, youtube_video_id: str, user_id: uuid.UUID):
+    async def get_analysis_by_youtube_video_id (self, youtube_video_id: str, user_id: str):
         try:
             return await self.repository.get_analysis_by_youtube_video_id(youtube_video_id, user_id)
 

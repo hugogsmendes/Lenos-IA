@@ -219,12 +219,17 @@ class UpdatedReport (BaseModel):
 
     model_config = ConfigDict(from_attributes = True, str_strip_whitespace = True)
 
-    title: str = Field(..., min_length = 2, max_length = MAX_TITLE_LENGTH)
+    new_title: str = Field(..., min_length = 2, max_length = MAX_TITLE_LENGTH)
 
-    @field_validator("title")
+    @field_validator("new_title")
     @classmethod
     def validate_title(cls, value: str) -> str:
         if not value.strip():
             raise ValueError("Titulo nao pode ser vazia.")
 
         return value
+
+class ResponseReport (BaseModel):
+
+    model_config = ConfigDict(from_attributes = True, str_strip_whitespace = True)
+

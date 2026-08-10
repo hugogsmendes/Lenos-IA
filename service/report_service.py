@@ -2,6 +2,7 @@ from database.postgres_client import SessionLocal
 from repository.analysis_repository import Analysis_Repository
 from models.reports import Report
 from repository.report_repository import Report_Repository
+from repository.comment_repository import Comment_Repository
 from service.comment_service import Comment_Service
 from service.analysis_service import Analysis_Service
 from utils.schemas import GenerateReport, UpdatedReport
@@ -12,7 +13,7 @@ from database.redis_client import get_redis
 from google import genai
 from google.genai import types, errors
 import json
-import uuid
+from uuid import UUID
 import re
 import asyncio
 from fpdf import FPDF
@@ -153,41 +154,41 @@ class Report_Service:
             [Conclusão final sobre a recepção do vídeo e comportamento da audiência]
         """
 
-    async def create_report (self, body: GenerateReport, user_id: uuid.UUID, background_tasks: BackgroundTasks):
+    async def create_report (self, schema: GenerateReport, user_id: str, background_tasks: BackgroundTasks):
 
         try:
-            logger.info("Starting report creation request for user %s, video_url %s", user_id, body.video_url)
-            count = await self.repository.report_count(user_id)
+            logger.info("Starting report creation request for user %s, video_url %s", user_id, schema.video_url)
+            count = await self.repository.report_count_by_user_id(user_id)
 
             if count >= 3:
                 logger.warning("Report creation rejected: limit reached for user %s", user_id)
                 raise HTTPException(status_code = status.HTTP_429_TOO_MANY_REQUESTS, 
                                     detail = "Limite de 3 relatórios atingido")
 
-            video_id = extract_youtube_video_id(body.video_url)
+            youtube_video_id = extract_youtube_video_id(schema.video_url)
 
-            if not video_id:
-                logger.warning("Report creation failed: invalid video URL %s", body.video_url)
+            if not youtube_video_id:
+                logger.warning("Report creation failed: invalid video URL %s", schema.video_url)
                 raise BadRequest
             
-            exists_report_by_video_id = await self.analysis_service.get_analysis_by_youtube_video_id(video_id, user_id)
+            exists_report = await self.analysis_service.get_analysis_by_youtube_video_id(youtube_video_id, user_id)
 
-            if exists_report_by_video_id:
-                logger.warning("Report creation rejected: video %s already has a report for user %s", video_id, user_id)
+            if exists_report:
+                logger.warning("Report creation rejected: video %s already has a report for user %s", youtube_video_id, user_id)
                 raise HTTPException(status_code = status.HTTP_429_TOO_MANY_REQUESTS,
-                                    detail = f"Relatório do vídeo id: {video_id} já gerado")
+                                    detail = f"Relatório do vídeo id: {youtube_video_id} já gerado")
 
-            await self.comment_service.verify_video_exists(video_id)
+            await self.comment_service.verify_video_exists(youtube_video_id)
                 
-            new_analysis = await self.analysis_service.create_analysis(user_id, body.video_url, video_id)
+            new_analysis = await self.analysis_service.create_analysis(user_id, schema.video_url, youtube_video_id)
 
-            user_key = f"{self.repository.cache_key}_{user_id}"
+            user_reports_key = f"{self.repository.cache_key}_{user_id}"
 
-            new_report = await self.repository.create_report(new_analysis.id, user_key)
-            
-            background_tasks.add_task(self.generate_report, video_id, new_report.id, user_key)
+            new_report = await self.repository.create_report(new_analysis.id, user_reports_key)
 
-            logger.info("Report creation background task started: report_id %s, video_id %s", new_report.id, video_id)
+            background_tasks.add_task(self.generate_report, youtube_video_id, new_report.id, user_id, user_reports_key)
+
+            logger.info("Report creation background task started: report_id %s, video_id %s", new_report.id, youtube_video_id)
             return {
                 "report_id": new_report.id, "status": new_analysis.status
             }
@@ -198,27 +199,29 @@ class Report_Service:
             logger.error("Unexpected error starting report creation for user %s: %s", user_id, str(e), exc_info=True)
             raise BadGateway
         
-    async def generate_report (self, video_id: str, report_id: uuid.UUID, user_key: str):
+    async def generate_report (self, video_id: str, report_id: UUID, user_id: str, user_reports_key: str):
 
         try:
             redis_client = await get_redis()
             async with SessionLocal() as session:
                 repository = Report_Repository(session, redis_client)
                 analysis_repository = Analysis_Repository(session)
+                comment_repository = Comment_Repository(session)
+                comment_service = Comment_Service(comment_repository)
                     
-                report = await repository.get_report(report_id)
-                analysis = await analysis_repository.get_analysis_by_report_id(report_id)
+                report = await repository.get_report_by_id(report_id)
+                analysis = await analysis_repository.get_analysis_by_report_id(report_id, user_id)
 
                 try:
                     logger.info("Background Task: Generating report %s for video %s", report_id, video_id)
-                    comments = await self.comment_service.get_comments_by_video_id(video_id)
+                    comments = await comment_service.get_comments_by_video_id(video_id)
 
-                    processed_comments = self.comment_service.processing_comments(comments)
+                    processed_comments = comment_service.processing_comments(comments)
 
                     if not processed_comments:
                         logger.warning("Background Task: No valid comments found for video %s, report %s failed", video_id, report_id)
                         await analysis_repository.update_analysis_failed(analysis)
-                        await repository.update_report_failed(report, user_key)
+                        await repository.update_report_failed(report, user_reports_key)
                         return
 
                     report_dict = await self.analyze_comments(processed_comments)
@@ -226,23 +229,23 @@ class Report_Service:
                     if not report_dict:
                         logger.error("Background Task: Gemini analysis failed for report %s", report_id)
                         await analysis_repository.update_analysis_failed(analysis)
-                        await repository.update_report_failed(report, user_key)
+                        await repository.update_report_failed(report, user_reports_key)
                         return
 
                     await analysis_repository.update_analysis_done(analysis)
                         
                     title = report_dict.get("titulo")
-                    markdown = report_dict.get("markdown",)
+                    markdown = report_dict.get("markdown")
 
                     await repository.update_report_done(report, self.prompt, 
-                                                                title, markdown, user_key)
+                                                                title, markdown, user_reports_key)
                     logger.info("Background Task: Report %s successfully generated and saved", report_id)
                         
                 except Exception as e:
                     logger.error("Background Task: Unexpected error generating report %s: %s", report_id, str(e), exc_info=True)
                     try:
                         await analysis_repository.update_analysis_failed(analysis)
-                        await repository.update_report_failed(report, user_key)
+                        await repository.update_report_failed(report, user_reports_key)
                     except Exception:
                         pass
                     return
@@ -277,23 +280,22 @@ class Report_Service:
             return
         
         
-    async def get_report_by_id (self, report_id: uuid.UUID, user_id: uuid.UUID):
+    async def get_report_by_id (self, report_id: UUID, user_id: str):
 
         try:
             await self.analysis_service.get_analysis_by_report_id(report_id, user_id)
 
-            res = await self.repository.get_report_by_id(report_id)
+            report = await self.repository.get_report_by_id(report_id)
 
             logger.info("Retrieved report details for report_id %s", report_id)
-            return [
-                {
-                    "id": report_id,
-                    "title": title,
-                    "url": url,
-                    "report": report,
-                    "status": status
-                }
-            for report_id, title, url, report, status in res]
+
+            return {
+                "id": report.id,
+                "title": report.report_title,
+                "url": report.analysis.video_url,
+                "report": report.report_markdown,
+                "status": report.analysis.status
+            }
         
         except HTTPException:
             raise
@@ -301,18 +303,18 @@ class Report_Service:
             logger.error("Unexpected error retrieving report %s: %s", report_id, str(e), exc_info=True)
             raise BadGateway
     
-    async def get_reports_by_user (self, user_id: uuid.UUID):
+    async def get_reports_by_user (self, user_id: str):
 
         try:
-            user_key = f"{self.repository.cache_key}_{user_id}"
+            user_reports_key = f"{self.repository.cache_key}_{user_id}"
 
-            user_reports = await self.repository.cache.get(user_key)
+            reports_cache = await self.repository.cache.get(user_reports_key)
 
-            if user_reports:
+            if reports_cache:
                 logger.info("Retrieved reports from cache for user %s", user_id)
-                return json.loads(user_reports)
+                return json.loads(reports_cache)
 
-            res = await self.repository.get_reports_by_user(user_id)
+            reports = await self.repository.get_reports_by_user(user_id)
 
             result = [
                 {
@@ -322,9 +324,9 @@ class Report_Service:
                     "report": report,
                     "status": status
                 }
-            for report_id, title, url, report, status in res]
+            for report_id, title, url, report, status in reports]
 
-            await self.repository.cache.set(user_key, json.dumps(result, default = str), ex = 120)
+            await self.repository.cache.set(user_reports_key, json.dumps(result, default = str), ex = 3600)
 
             logger.info("Retrieved reports from database for user %s and updated cache", user_id)
             return result
@@ -335,18 +337,18 @@ class Report_Service:
             logger.error("Unexpected error listing reports for user %s: %s", user_id, str(e), exc_info=True)
             raise BadGateway
     
-    async def update_report (self, report_id: uuid.UUID, schema: UpdatedReport, user_id: uuid.UUID):
+    async def update_report (self, report_id: UUID, schema: UpdatedReport, user_id: str):
         
         try:
             await self.analysis_service.get_analysis_by_report_id(report_id, user_id)
             
-            report = await self.repository.get_report(report_id)
+            report = await self.repository.get_report_by_id(report_id)
 
-            user_key = f"{self.repository.cache_key}_{user_id}"
+            user_reports_key = f"{self.repository.cache_key}_{user_id}"
 
-            result = await self.repository.update_report(schema, report, user_key)
+            await self.repository.update_report(schema, report, user_reports_key)
             logger.info("Report %s updated successfully by user %s", report_id, user_id)
-            return result
+            return None
 
         except HTTPException:
             raise
@@ -354,14 +356,14 @@ class Report_Service:
             logger.error("Unexpected error updating report %s: %s", report_id, str(e), exc_info=True)
             raise BadGateway
         
-    async def delete_report (self, report_id: uuid.UUID, user_id: uuid.UUID):
+    async def delete_report (self, report_id: UUID, user_id: str):
 
         try:
-            user_key = f"{self.repository.cache_key}_{user_id}"
+            user_reports_key = f"{self.repository.cache_key}_{user_id}"
 
             await self.analysis_service.delete_analysis(report_id, user_id)
 
-            await self.repository.cache.delete(user_key)
+            await self.repository.cache.delete(user_reports_key)
 
             logger.info("Report %s and associated analysis deleted successfully for user %s", report_id, user_id)
             return None
@@ -372,13 +374,13 @@ class Report_Service:
             logger.error("Unexpected error deleting report %s: %s", report_id, str(e), exc_info=True)
             raise BadGateway
         
-    async def get_report_pdf_by_id (self, report_id: uuid.UUID, user_id: uuid.UUID):
+    async def get_report_pdf_by_id (self, report_id: UUID, user_id: str):
 
         try:
 
             await self.analysis_service.get_analysis_by_report_id(report_id, user_id)
 
-            report = await self.repository.get_report(report_id)
+            report = await self.repository.get_report_by_id(report_id)
 
             logger.info("Generating PDF for report %s", report_id)
             pdf_bytes = await asyncio.to_thread(self.generate_pdf, report)

@@ -14,30 +14,18 @@ class Report_Repository:
         self.cache = cache
         self.cache_key = "reports"
     
-    async def create_report (self, analysis_id: UUID, user_key: str) -> Report:
+    async def create_report (self, analysis_id: UUID, cache_key: str) -> Report:
 
         new_report = Report(analysis_id = analysis_id)
 
         self.session.add(new_report)
         await self.session.commit()
-        await self.cache.delete(user_key)
+        await self.cache.delete(cache_key)
         await self.session.refresh(new_report)
 
         return new_report
-    
-    async def get_report_by_id (self, report_id: UUID) -> tuple[UUID, str, str, str, str]:
-        
-        query = (
-                select(Report.id, Report.report_title, Analysis.video_url, Report.report_markdown, Analysis.status)
-                 .join(Report.analysis)
-                 .filter(Report.id == report_id)
-                 )
-        
-        result = await self.session.execute(query)
-
-        return result.all()
-    
-    async def get_reports_by_user (self, user_id: UUID) -> tuple[UUID, str, str, str, str]:
+      
+    async def get_reports_by_user (self, user_id: str) -> tuple[UUID, str, str, str, str]:
 
         query = (
                 select(Report.id, Report.report_title, Analysis.video_url ,Report.report_markdown, Analysis.status)
@@ -49,7 +37,7 @@ class Report_Repository:
 
         return result.all()
     
-    async def get_report (self, report_id: UUID) -> Report:
+    async def get_report_by_id (self, report_id: UUID) -> Report | None:
 
         query = select(Report).filter(Report.id == report_id)
 
@@ -57,32 +45,32 @@ class Report_Repository:
 
         return result.scalar_one_or_none()
     
-    async def update_report (self, schema: UpdatedReport, report: Report, user_key: str) -> None:
+    async def update_report (self, schema: UpdatedReport, report: Report, cache_key: str) -> None:
         
-        report.report_title = schema.title
+        report.report_title = schema.new_title
         await self.session.commit()
-        await self.cache.delete(user_key)
+        await self.cache.delete(cache_key)
         await self.session.refresh(report)
 
-    async def update_report_done (self, report: Report, prompt: str, title: str, markdown: str, user_key: str) -> None:
+    async def update_report_done (self, report: Report, prompt: str, title: str, markdown: str, cache_key: str) -> None:
 
         report.prompt = prompt
         report.report_title = title
         report.report_markdown = markdown
         await self.session.commit()
-        await self.cache.delete(user_key)
+        await self.cache.delete(cache_key)
         await self.session.refresh(report)
 
-    async def update_report_failed (self, report: Report, user_key: str) -> None:
+    async def update_report_failed (self, report: Report, cache_key: str) -> None:
         
         report.prompt = "failed"
         report.report_title = "failed"
         report.report_markdown = "failed"
         await self.session.commit()
-        await self.cache.delete(user_key)
+        await self.cache.delete(cache_key)
         await self.session.refresh(report)
 
-    async def report_count (self, user_id: UUID):
+    async def report_count_by_user_id (self, user_id: str):
         
         query = (select(func.count()).select_from(Report)
             .join(Report.analysis)
