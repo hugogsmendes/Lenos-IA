@@ -192,9 +192,17 @@ class AnswerQuestion (BaseModel):
 
 class ResponseAnswerQuestion (BaseModel):
 
+    model_config = ConfigDict(from_attributes = True, str_strip_whitespace = True)
+
     question: ResponseQuestion
     answer: str
-    user: ResponseUser
+
+class ResponseAnswers (BaseModel):
+
+    question_id: UUID
+    question: str
+    answer_id: UUID
+    answer: str
 
 class UpdateAnswer (BaseModel):
 

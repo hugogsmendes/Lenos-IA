@@ -30,7 +30,7 @@ async def create_question(request: Request, body: CreateQuestion, service: Quest
 
 @question_router.get(path = "/questions", 
                      responses = list_questions_responses,
-                     status_code = status.HTTP_200_OK)
+                     status_code = status.HTTP_200_OK, response_model = list[ResponseQuestion])
 @limiter.limit("10/minute")
 async def list_questions(request: Request, service: Question_Service = Depends(get_question_service), current_user: dict = Depends(get_current_user)):
     return await service.list_questions()
