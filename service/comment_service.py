@@ -5,7 +5,7 @@ import googleapiclient.errors
 from utils.exceptions import BadRequest, NotFound, Forbidden
 import asyncio
 from utils.logging import get_logger
-from core.config import Settings
+from settings.config import Settings
 
 logger = get_logger("comment_service")
 

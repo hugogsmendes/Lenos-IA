@@ -7,7 +7,7 @@ from alembic import context
 
 import sys
 import os
-from core.config import Settings
+from settings.config import Settings
 
 settings = Settings()
 

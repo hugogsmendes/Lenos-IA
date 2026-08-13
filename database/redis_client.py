@@ -1,5 +1,5 @@
 from redis.asyncio import Redis, ConnectionPool
-from core.config import Settings
+from settings.config import Settings
 
 settings = Settings()
 

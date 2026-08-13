@@ -1,4 +1,4 @@
-from core.config import Settings
+from settings.config import Settings
 from fastapi import Response
 
 settings = Settings()

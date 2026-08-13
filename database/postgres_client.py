@@ -1,4 +1,4 @@
-from core.config import Settings
+from settings.config import Settings
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
 from sqlalchemy.orm import declarative_base
 from sqlalchemy.pool import NullPool

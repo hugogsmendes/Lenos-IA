@@ -18,7 +18,7 @@ import re
 import asyncio
 from fpdf import FPDF
 from utils.logging import get_logger
-from core.config import Settings
+from settings.config import Settings
 
 logger = get_logger("report_service")
 

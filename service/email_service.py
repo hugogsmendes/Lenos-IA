@@ -1,4 +1,4 @@
-from core.config import Settings
+from settings.config import Settings
 import resend
 from utils.logging import get_logger
 

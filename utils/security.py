@@ -3,7 +3,7 @@ from argon2.exceptions import VerificationError
 import jwt
 from datetime import datetime, timedelta, timezone
 from utils.logging import get_logger
-from core.config import Settings
+from settings.config import Settings
 from uuid import UUID
 
 logger = get_logger("security")
