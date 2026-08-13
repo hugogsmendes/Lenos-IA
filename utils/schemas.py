@@ -229,7 +229,22 @@ class UpdatedReport (BaseModel):
 
         return value
 
-class ResponseReport (BaseModel):
+class MessageError (BaseModel):
 
-    model_config = ConfigDict(from_attributes = True, str_strip_whitespace = True)
+    detail: str
 
+class RateLimitError (BaseModel):
+
+    erro: str
+
+class UserMessage (BaseModel):
+
+    message: str
+
+class UserMe (BaseModel):
+
+    id: str
+    name: str
+    email: str
+    phone: str
+    role: str
