@@ -238,6 +238,19 @@ class UpdatedReport (BaseModel):
 
         return value
 
+class ResponseReportCreate (BaseModel):
+
+    report_id: UUID
+    status: str
+
+class ResponseReport (BaseModel):
+
+    id: UUID
+    title: str
+    url: str
+    report: str
+    status: str
+
 class MessageError (BaseModel):
 
     detail: str

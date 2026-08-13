@@ -162,8 +162,7 @@ class Report_Service:
 
             if count >= 3:
                 logger.warning("Report creation rejected: limit reached for user %s", user_id)
-                raise HTTPException(status_code = status.HTTP_429_TOO_MANY_REQUESTS, 
-                                    detail = "Limite de 3 relatórios atingido")
+                raise BadRequest(detail = "Limite de 3 relatórios atingido")
 
             youtube_video_id = extract_youtube_video_id(schema.video_url)
 
@@ -175,8 +174,7 @@ class Report_Service:
 
             if exists_report:
                 logger.warning("Report creation rejected: video %s already has a report for user %s", youtube_video_id, user_id)
-                raise HTTPException(status_code = status.HTTP_429_TOO_MANY_REQUESTS,
-                                    detail = f"Relatório do vídeo id: {youtube_video_id} já gerado")
+                raise BadRequest(detail = f"Relatório do vídeo id: {youtube_video_id} já gerado")
 
             await self.comment_service.verify_video_exists(youtube_video_id)
                 
