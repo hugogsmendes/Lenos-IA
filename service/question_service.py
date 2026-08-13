@@ -3,6 +3,7 @@ from fastapi import HTTPException
 from utils.exceptions import BadGateway
 import json
 from utils.logging import get_logger
+from utils.schemas import ResponseQuestion
 
 logger = get_logger("question_service")
 
@@ -35,11 +36,9 @@ class Question_Service:
             questions = await self.repository.list_questions()
 
             result = [
-                {
-                    "id": question.id,
-                    "question": question.description
-                }
-            for question in questions]
+                ResponseQuestion.model_validate(question).model_dump(mode = "json")
+                for question in questions
+            ]
 
             await self.repository.cache.set(self.repository.cache_key, json.dumps(result, default = str), ex = 3600)
 

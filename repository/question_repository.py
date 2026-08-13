@@ -17,6 +17,7 @@ class Question_Repository:
 
         self.session.add(new_question)
         await self.session.commit()
+        await self.cache.delete(self.cache_key)
         await self.session.refresh(new_question)
 
         return new_question

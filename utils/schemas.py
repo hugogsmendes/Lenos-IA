@@ -171,7 +171,8 @@ class CreateQuestion (BaseModel):
 class ResponseQuestion (BaseModel):
 
     model_config = ConfigDict(from_attributes = True)
-
+    
+    id: UUID
     description: str
 
 class AnswerQuestion (BaseModel):
