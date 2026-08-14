@@ -38,7 +38,7 @@ class Comment_Service:
         self.repository = repository
         self.api_service_name = "youtube"
         self.api_version = "v3"
-        self._api_key = settings.key_youtube
+        self._api_key = settings.YOUTUBE_API_KEY
         self.youtube_service = googleapiclient.discovery.build(self.api_service_name, self.api_version, developerKey = self._api_key)
 
     async def verify_video_exists (self, video_id: str):

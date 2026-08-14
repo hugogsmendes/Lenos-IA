@@ -10,7 +10,7 @@ logger = get_logger("security")
 
 settings = Settings()
 
-PEPPER = settings.pepper
+PEPPER = settings.PEPPER
 SECRET_KEY = settings.SECRET_KEY
 ALGORITHM = settings.ALGORITHM
 ACCESS_TOKEN_EXPIRE = settings.ACCESS_TOKEN_EXPIRE

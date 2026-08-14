@@ -6,13 +6,13 @@ logger = get_logger("email_service")
 
 settings = Settings()
 
-resend.api_key = settings.key_resend
+resend.api_key = settings.RESEND_API_KEY
 
 class Email_Service:
 
     def __init__(self):
-        self.email_from = settings.email_from
-        self.front = settings.front
+        self.email_from = settings.EMAIL_FROM
+        self.front = settings.FRONT
 
     def send_verification_email (self, to_email: str, token: str):
 

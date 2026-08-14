@@ -31,7 +31,7 @@ class Report_Service:
         self.repository = repository
         self.comment_service = comment_service
         self.analysis_service = analysis_service
-        self._api_key = settings.key_gemini
+        self._api_key = settings.GEMINI_API_KEY
         self.gemini_service = genai.Client(api_key = self._api_key)
         self.model = "gemini-2.5-flash-lite"
         self.prompt = """
