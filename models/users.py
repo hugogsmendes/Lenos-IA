@@ -1,6 +1,6 @@
 from typing import TYPE_CHECKING
 from database.postgres_client import Base
-from uuid import uuid4
+import uuid
 from datetime import datetime
 from sqlalchemy import DateTime, String, func, Boolean, Enum
 from sqlalchemy.dialects.postgresql import UUID
@@ -17,7 +17,7 @@ class User (Base):
 
     __tablename__ = "users"
 
-    id: Mapped[UUID] = mapped_column(UUID, primary_key = True, default = uuid4)
+    id: Mapped[uuid.UUID] = mapped_column(UUID, primary_key = True, default = uuid.uuid4())
     name: Mapped[str] = mapped_column(String, nullable = False)
     email: Mapped[str] = mapped_column(String, nullable = False, unique = True)
     phone: Mapped[str] = mapped_column(String, nullable = False, unique = True)

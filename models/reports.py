@@ -1,6 +1,6 @@
 from typing import TYPE_CHECKING
 from database.postgres_client import Base
-from uuid import uuid4
+import uuid
 from datetime import datetime
 from sqlalchemy import DateTime, String, func, ForeignKey, Integer
 from sqlalchemy.dialects.postgresql import UUID
@@ -13,8 +13,8 @@ class Report (Base):
 
     __tablename__ = "reports"
 
-    id: Mapped[UUID] = mapped_column(UUID, primary_key = True, default = uuid4)
-    analysis_id: Mapped[UUID] = mapped_column(UUID, ForeignKey("analyses.id", ondelete = "CASCADE"), nullable = False, unique = True)
+    id: Mapped[uuid.UUID] = mapped_column(UUID, primary_key = True, default = uuid.uuid4())
+    analysis_id: Mapped[uuid.UUID] = mapped_column(UUID, ForeignKey("analyses.id", ondelete = "CASCADE"), nullable = False, unique = True)
     prompt: Mapped[str] = mapped_column(String, nullable = True)
     report_markdown: Mapped[str] = mapped_column(String, nullable = True)
     report_title: Mapped[str] = mapped_column(String, nullable = True)
