@@ -6,7 +6,7 @@ from repository.comment_repository import Comment_Repository
 from service.comment_service import Comment_Service
 from service.analysis_service import Analysis_Service
 from utils.schemas import GenerateReport, UpdatedReport
-from fastapi import HTTPException, BackgroundTasks, status
+from fastapi import HTTPException, BackgroundTasks
 from utils.exceptions import BadGateway, BadRequest
 from utils.processing import extract_youtube_video_id
 from database.redis_client import get_redis
@@ -269,8 +269,8 @@ class Report_Service:
             logger.info("Gemini API response received successfully")
             return json.loads(response.text)
 
-        except errors.APIError as e:
-            logger.error("Gemini API Error: Code %s - %s", e.code, e.message)
+        except errors.APIError as error:
+            logger.error("Gemini API Error: Code %s - %s", error.code, error.message)
             return
         
         except Exception as e:

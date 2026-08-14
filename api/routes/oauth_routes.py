@@ -27,6 +27,7 @@ oauth_callback_responses = {
     200: {"model": UserMessage, "description": "Conta Youtube conectada"},
     400: {"model": MessageError, "description": "Código de autorização inválido"},
     403: {"model": MessageError, "description": "Sem permissão"},
+    404: {"model": MessageError, "description": "Não foi possível encontrar o canal"},
     429: {"model": RateLimitError, "description": "Limite de requisição"},
     502: {"model": MessageError, "description": "Serviço indisponível"}
 }

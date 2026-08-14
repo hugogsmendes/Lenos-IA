@@ -59,9 +59,9 @@ class Comment_Service:
             logger.info("Video %s verified successfully", video_id)
             return
         
-        except googleapiclient.errors.HttpError as e:
-            status_code = e.resp.status
-            logger.warning("YouTube API error (HTTP %s) verifying video %s: %s", status_code, video_id, str(e))
+        except googleapiclient.errors.HttpError as error:
+            status_code = error.resp.status
+            logger.warning("YouTube API error (HTTP %s) verifying video %s: %s", status_code, video_id, str(error))
             
             if status_code == 404:
                 raise NotFound(register = video_id, detail = "não encontrado no Youtube")
@@ -105,9 +105,9 @@ class Comment_Service:
             logger.info("Fetched %s comments for video %s", len(all_items), video_id)
             return {"items": all_items[:max_comments], "pageInfo": response.get("pageInfo", {})}
         
-        except googleapiclient.errors.HttpError as e:
-            status_code = e.resp.status
-            logger.error("YouTube API error (HTTP %s) fetching comments for video %s: %s", status_code, video_id, str(e.error_details))
+        except googleapiclient.errors.HttpError as error:
+            status_code = error.resp.status
+            logger.error("YouTube API error (HTTP %s) fetching comments for video %s: %s", status_code, video_id, str(error.error_details))
             return
         
     def processing_comments(self, comments: dict):
