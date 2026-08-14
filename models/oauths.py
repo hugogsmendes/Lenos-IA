@@ -16,7 +16,11 @@ class Oauth (Base):
     id: Mapped[UUID] = mapped_column(UUID, primary_key = True, default = uuid4)
     user_id: Mapped[UUID] = mapped_column(UUID, ForeignKey("users.id", ondelete = "CASCADE"), nullable = False)
     access_token: Mapped[str] = mapped_column(String, nullable = False)
+    expires_in: Mapped[datetime] = mapped_column(DateTime(timezone = True), nullable = False)
     refresh_token: Mapped[str] = mapped_column(String, nullable = False)
+    refresh_token_expires_in: Mapped[datetime] = mapped_column(DateTime(timezone = True), nullable = False)
+    scope: Mapped[str] = mapped_column(String, nullable = False)
+    token_type: Mapped[str] = mapped_column(String, nullable = False)
     channel_id: Mapped[str] = mapped_column(String, nullable = True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone = True),
