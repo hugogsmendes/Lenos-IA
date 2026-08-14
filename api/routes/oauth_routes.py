@@ -4,6 +4,7 @@ from app.main import limiter
 from service.user_service import User_Service
 from utils.dependencies import get_user_service, get_current_user
 from settings.config import Settings
+from utils.schemas import MessageError, RateLimitError
 
 settings = Settings()
 
@@ -16,7 +17,15 @@ CLIENT_SECRET = settings.CLIENT_SECRET
 
 oauth_router = APIRouter(prefix = "/v1/oauth2", tags = ["oauth2"])
 
-@oauth_router.get(path = "/login", status_code = status.HTTP_307_TEMPORARY_REDIRECT)
+oauth_login_responses = {
+    307: {"model": None, "description": "Redirecionamento temporário"},
+    403: {"model": MessageError, "description": "Sem permissão"},
+    429: {"model": RateLimitError, "description": "Limite de requisição"},
+}
+
+@oauth_router.get(path = "/login", 
+                  responses = oauth_login_responses,
+                  status_code = status.HTTP_307_TEMPORARY_REDIRECT)
 @limiter.limit("10/minute")
 async def oauth_login (request: Request, current_user: dict = Depends(get_current_user)):
 

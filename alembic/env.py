@@ -37,6 +37,7 @@ from models.comments import Comment
 from models.reports import Report
 from models.answers import Answer
 from models.questions import Question
+from models.oauths import Oauth
 
 
 target_metadata = Base.metadata

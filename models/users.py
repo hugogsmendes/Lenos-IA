@@ -10,6 +10,7 @@ import enum
 if TYPE_CHECKING:
     from .analyses import Analysis
     from .answers import Answer
+    from .oauths import Oauth
 
 
 class User (Base):
@@ -38,3 +39,4 @@ class User (Base):
     
     analyses: Mapped[list["Analysis"]] = relationship(back_populates = "user", lazy = "subquery", cascade = "all, delete")
     answers: Mapped[list["Answer"]] = relationship(back_populates = "user", lazy = "subquery", cascade = "all, delete")
+    oauth: Mapped["Oauth"] = relationship(back_populates = "user", lazy = "subquery", cascade = "all, delete")
