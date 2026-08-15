@@ -270,3 +270,10 @@ class UserMe (BaseModel):
     email: str
     phone: str
     role: str
+
+class OauthUserTokens (BaseModel):
+
+    model_config = ConfigDict(from_attributes = True, str_strip_whitespace = True)
+
+    access_token: str
+    refresh_token: str

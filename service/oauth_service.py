@@ -1,5 +1,6 @@
 from repository.oauth_repository import Oauth_Repository
-from utils.exceptions import BadGateway, BadRequest, NotFound, Forbidden
+from utils.exceptions import BadGateway, BadRequest, NotFound
+from utils.schemas import OauthUserTokens
 from fastapi import HTTPException
 from settings.config import Settings
 import httpx
@@ -23,15 +24,16 @@ class Oauth_Service:
         self.api_service_name = "youtube"
         self.api_version = "v3"
 
-    async def get_oauth_by_user_id (self, user_id: str):
+    async def get_oauth_tokens_by_user_id (self, user_id: str):
 
         try:
-            oauth = await self.repository.get_oauth_by_user_id(user_id)
+            access_token, refreh_token = await self.repository.get_oauth_tokens_by_user_id(user_id)
 
-            if oauth:
+            if access_token and refreh_token:
                 raise BadRequest(detail = "Conta Youtube já conectada")
+            
+            return access_token, refreh_token
 
-            return None
         except HTTPException:
             raise
         except Exception as e:

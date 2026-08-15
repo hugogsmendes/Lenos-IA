@@ -24,6 +24,7 @@ logger = get_logger("report_service")
 
 settings = Settings()
 
+GEMINI_API_KEY = settings.GEMINI_API_KEY
 class Report_Service:
 
     def __init__(self, repository: Report_Repository, comment_service: Comment_Service, analysis_service: Analysis_Service):
@@ -31,8 +32,7 @@ class Report_Service:
         self.repository = repository
         self.comment_service = comment_service
         self.analysis_service = analysis_service
-        self._api_key = settings.GEMINI_API_KEY
-        self.gemini_service = genai.Client(api_key = self._api_key)
+        self.gemini_service = genai.Client(api_key = GEMINI_API_KEY)
         self.model = "gemini-2.5-flash-lite"
         self.prompt = """
             Você é um analista de dados especialista em comportamento de comunidades digitais, análise de audiência e interpretação de feedback social.

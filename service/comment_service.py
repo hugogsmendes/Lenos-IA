@@ -1,6 +1,7 @@
 from repository.comment_repository import Comment_Repository
+from service.oauth_service import Oauth_Service
 import re
-import googleapiclient.discovery
+from googleapiclient.discovery import build
 import googleapiclient.errors
 from utils.exceptions import BadRequest, NotFound, Forbidden
 import asyncio
@@ -10,6 +11,8 @@ from settings.config import Settings
 logger = get_logger("comment_service")
 
 settings = Settings()
+
+MAX_COMMENTS = 200
 
 _EMOJI_PATTERN = re.compile(
     "["
@@ -34,12 +37,9 @@ _EMOJI_PATTERN = re.compile(
 
 class Comment_Service:
 
-    def __init__(self, repository: Comment_Repository):
+    def __init__(self, repository: Comment_Repository, oauth_service: Oauth_Service):
         self.repository = repository
-        self.api_service_name = "youtube"
-        self.api_version = "v3"
-        self._api_key = settings.YOUTUBE_API_KEY
-        self.youtube_service = googleapiclient.discovery.build(self.api_service_name, self.api_version, developerKey = self._api_key)
+        self.oauth_service = oauth_service
 
     async def verify_video_exists (self, video_id: str):
 
@@ -74,7 +74,7 @@ class Comment_Service:
             logger.error("Unexpected error verifying video %s: %s", video_id, str(e), exc_info=True)
             raise BadRequest(detail = f"Erro {str(e)}")
 
-    async def get_comments_by_video_id (self, video_id: str, max_comments: int = 200):
+    async def get_comments_by_video_id (self, video_id: str, max_comments: int = MAX_COMMENTS):
 
         try:
             logger.info("Fetching up to %s comments for video %s", max_comments, video_id)

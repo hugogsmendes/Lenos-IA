@@ -37,7 +37,7 @@ oauth_callback_responses = {
                   status_code = status.HTTP_307_TEMPORARY_REDIRECT)
 @limiter.limit("10/minute")
 async def oauth_login (request: Request, service: Oauth_Service = Depends(get_oauth_service), current_user: dict = Depends(get_current_user)):
-    await service.get_oauth_by_user_id(current_user.get("id"))
+    await service.get_oauth_tokens_by_user_id(current_user.get("id"))
     auth_url = f"{AUTH_URI}?scope={SCOPE}&access_type=offline&response_type=code&prompt=consent&redirect_uri={REDIRECT_URI}&client_id={CLIENT_ID}"
     return RedirectResponse(auth_url)
 

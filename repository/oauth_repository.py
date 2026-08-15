@@ -8,13 +8,13 @@ class Oauth_Repository:
     def __init__(self, session: AsyncSession):
         self.session = session
 
-    async def get_oauth_by_user_id (self, user_id: str) -> Oauth | None:
+    async def get_oauth_tokens_by_user_id (self, user_id: str) -> tuple | None:
 
-        query = select(Oauth.user_id).filter(Oauth.user_id == user_id)
+        query = select(Oauth.access_token, Oauth.refresh_token).filter(Oauth.user_id == user_id)
 
         result = await self.session.execute(query)
 
-        return result.scalar_one_or_none()
+        return result.first()
 
     async def create_oauth (self, oauth_dict: dict) -> None:
 
