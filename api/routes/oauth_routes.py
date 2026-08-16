@@ -36,8 +36,7 @@ oauth_callback_responses = {
                   responses = oauth_login_responses,
                   status_code = status.HTTP_307_TEMPORARY_REDIRECT)
 @limiter.limit("10/minute")
-async def oauth_login (request: Request, service: Oauth_Service = Depends(get_oauth_service), current_user: dict = Depends(get_current_user)):
-    await service.get_oauth_tokens_by_user_id(current_user.get("id"))
+async def oauth_login (request: Request, current_user: dict = Depends(get_current_user)):
     auth_url = f"{AUTH_URI}?scope={SCOPE}&access_type=offline&response_type=code&prompt=consent&redirect_uri={REDIRECT_URI}&client_id={CLIENT_ID}"
     return RedirectResponse(auth_url)
 
@@ -46,5 +45,5 @@ async def oauth_login (request: Request, service: Oauth_Service = Depends(get_oa
                   status_code = status.HTTP_200_OK)
 @limiter.limit("10/minute")
 async def ouath_callback (request: Request, code: str, service: Oauth_Service = Depends(get_oauth_service), current_user: dict = Depends(get_current_user)):
-    await service.create_oauth(current_user.get("id"), code)
+    await service.create_user_oauth(current_user.get("id"), code)
     return {"message": "Conta Youtube conectada com sucesso"}

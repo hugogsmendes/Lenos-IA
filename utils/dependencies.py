@@ -77,18 +77,19 @@ def get_oauth_service(repository: Oauth_Repository = Depends(get_oauth_repositor
 def get_comment_repository(session: AsyncSession = Depends(get_session)):
     return Comment_Repository(session = session)
 
-def get_comment_service(repository: Comment_Repository = Depends(get_comment_repository),
-                        oauth_service: Oauth_Service = Depends(get_oauth_service)):
-    return Comment_Service(repository = repository, oauth_service = oauth_service)
+def get_comment_service(repository: Comment_Repository = Depends(get_comment_repository)):
+    return Comment_Service(repository = repository)
 
 def get_report_repository(session: AsyncSession = Depends(get_session), cache: Redis = Depends(get_session_redis)):
     return Report_Repository(session = session, cache = cache)
 
 def get_report_service(repository: Report_Repository = Depends(get_report_repository),
                        comment_service: Comment_Service = Depends(get_comment_service),
-                       analysis_service: Analysis_Service = Depends(get_analysis_service)):
+                       analysis_service: Analysis_Service = Depends(get_analysis_service),
+                       oauth_service: Oauth_Service = Depends(get_oauth_service)):
     
-    return Report_Service(repository = repository, comment_service = comment_service, analysis_service = analysis_service)
+    return Report_Service(repository = repository, comment_service = comment_service, 
+                          analysis_service = analysis_service, oauth_service = oauth_service)
 
 async def get_current_user(request: Request, credential: HTTPAuthorizationCredentials = Depends(security)):
     try:

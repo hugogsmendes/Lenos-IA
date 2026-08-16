@@ -5,6 +5,7 @@ from repository.report_repository import Report_Repository
 from repository.comment_repository import Comment_Repository
 from service.comment_service import Comment_Service
 from service.analysis_service import Analysis_Service
+from service.oauth_service import Oauth_Service
 from utils.schemas import GenerateReport, UpdatedReport
 from fastapi import HTTPException, BackgroundTasks
 from utils.exceptions import BadGateway, BadRequest
@@ -27,9 +28,11 @@ settings = Settings()
 GEMINI_API_KEY = settings.GEMINI_API_KEY
 class Report_Service:
 
-    def __init__(self, repository: Report_Repository, comment_service: Comment_Service, analysis_service: Analysis_Service):
+    def __init__(self, repository: Report_Repository, comment_service: Comment_Service, analysis_service: Analysis_Service,
+                 oauth_service: Oauth_Service):
 
         self.repository = repository
+        self.oauth_service = oauth_service
         self.comment_service = comment_service
         self.analysis_service = analysis_service
         self.gemini_service = genai.Client(api_key = GEMINI_API_KEY)
@@ -158,7 +161,7 @@ class Report_Service:
 
         try:
             logger.info("Starting report creation request for user %s, video_url %s", user_id, schema.video_url)
-            count = await self.repository.report_count_by_user_id(user_id)
+            count = await self.repository.report_done_count_by_user_id(user_id)
 
             if count >= 3:
                 logger.warning("Report creation rejected: limit reached for user %s", user_id)
@@ -168,23 +171,36 @@ class Report_Service:
 
             if not youtube_video_id:
                 logger.warning("Report creation failed: invalid video URL %s", schema.video_url)
-                raise BadRequest
+                raise BadRequest(detail = "Url do vídeo inválida")
             
             exists_report = await self.analysis_service.get_analysis_by_youtube_video_id(youtube_video_id, user_id)
 
             if exists_report:
                 logger.warning("Report creation rejected: video %s already has a report for user %s", youtube_video_id, user_id)
                 raise BadRequest(detail = f"Relatório do vídeo id: {youtube_video_id} já gerado")
+            
+            access_token, refresh_token = await self.oauth_service.get_tokens_by_user_id(user_id)
+            youtube_service = self.oauth_service.get_youtube_service(access_token, refresh_token)
 
-            await self.comment_service.verify_video_exists(youtube_video_id)
+            await self.comment_service.verify_video_exists(youtube_service, youtube_video_id)
                 
-            new_analysis = await self.analysis_service.create_analysis(user_id, schema.video_url, youtube_video_id)
-
             user_reports_key = f"{self.repository.cache_key}_{user_id}"
 
-            new_report = await self.repository.create_report(new_analysis.id, user_reports_key)
+            try:
+                new_analysis = await self.analysis_service.create_analysis(user_id, schema.video_url, youtube_video_id)
+                new_report = await self.repository.create_report(new_analysis.id)
+                await self.repository.session.commit()
+            except Exception as e:
+                logger.error("Failed to create analysis/report pair for user %s, video %s: %s", user_id, youtube_video_id, str(e), exc_info=True)
+                raise
 
-            background_tasks.add_task(self.generate_report, youtube_video_id, new_report.id, user_id, user_reports_key)
+            try:
+                await self.repository.cache.delete(user_reports_key)
+                logger.info("Report cache invalidated for user %s after report creation", user_id)
+            except Exception as e:
+                logger.warning("Failed to invalidate report cache for user %s: %s", user_id, str(e), exc_info=True)
+
+            background_tasks.add_task(self.generate_report, youtube_video_id, new_report.id, new_analysis.id, user_reports_key, youtube_service)
 
             logger.info("Report creation background task started: report_id %s, video_id %s", new_report.id, youtube_video_id)
             return {
@@ -194,61 +210,82 @@ class Report_Service:
         except HTTPException:
             raise
         except Exception as e:
+            await self.repository.session.rollback()
             logger.error("Unexpected error starting report creation for user %s: %s", user_id, str(e), exc_info=True)
             raise BadGateway
         
-    async def generate_report (self, video_id: str, report_id: UUID, user_id: str, user_reports_key: str):
+    async def generate_report (self, video_id: str, report_id: UUID, analysis_id: UUID, user_reports_key: str, youtube_service):
 
+        redis_client = None
         try:
-            redis_client = await get_redis()
+            try:
+                redis_client = await get_redis()
+            except Exception as e:
+                logger.warning("Background Task: Redis unavailable for report %s: %s", report_id, str(e), exc_info=True)
+
             async with SessionLocal() as session:
                 repository = Report_Repository(session, redis_client)
                 analysis_repository = Analysis_Repository(session)
                 comment_repository = Comment_Repository(session)
                 comment_service = Comment_Service(comment_repository)
-                    
-                report = await repository.get_report_by_id(report_id)
-                analysis = await analysis_repository.get_analysis_by_report_id(report_id, user_id)
 
                 try:
                     logger.info("Background Task: Generating report %s for video %s", report_id, video_id)
-                    comments = await comment_service.get_comments_by_video_id(video_id)
+                    comments = await comment_service.get_comments_by_video_id(youtube_service, video_id)
+
+                    if not comments:
+                        raise ValueError("No comments returned by YouTube")
 
                     processed_comments = comment_service.processing_comments(comments)
 
                     if not processed_comments:
-                        logger.warning("Background Task: No valid comments found for video %s, report %s failed", video_id, report_id)
-                        await analysis_repository.update_analysis_failed(analysis)
-                        await repository.update_report_failed(report, user_reports_key)
-                        return
+                        raise ValueError("No valid comments found")
 
                     report_dict = await self.analyze_comments(processed_comments)
 
                     if not report_dict:
                         logger.error("Background Task: Gemini analysis failed for report %s", report_id)
-                        await analysis_repository.update_analysis_failed(analysis)
-                        await repository.update_report_failed(report, user_reports_key)
-                        return
+                        raise RuntimeError("Gemini analysis returned no data")
 
-                    await analysis_repository.update_analysis_done(analysis)
-                        
                     title = report_dict.get("titulo")
                     markdown = report_dict.get("markdown")
-
-                    await repository.update_report_done(report, self.prompt, 
-                                                                title, markdown, user_reports_key)
+                    await analysis_repository.update_analysis_done_by_id(analysis_id)
+                    await repository.update_report_done_by_id(report_id, self.prompt, title, markdown)
+                    await session.commit()
                     logger.info("Background Task: Report %s successfully generated and saved", report_id)
-                        
+
+                    try:
+                        await self.repository.cache.delete(user_reports_key)
+                        logger.info("Background Task: Cache invalidated for report %s", report_id)
+                    except Exception as e:
+                        logger.warning("Background Task: Failed to invalidate cache for report %s: %s", report_id, str(e), exc_info=True)
+
+                except ValueError as e:
+                    logger.warning("Background Task: Report %s generation rejected: %s", report_id, str(e))
+                    await session.rollback()
+                    try:
+                        await analysis_repository.update_analysis_failed_by_id(analysis_id)
+                        await repository.update_report_failed_by_id(report_id)
+                        await session.commit()
+                        logger.info("Background Task: Report %s marked as failed", report_id)
+                    except Exception:
+                        logger.error("Background Task: Failed to persist failure state for report %s", report_id, exc_info=True)
+                    return
+
                 except Exception as e:
                     logger.error("Background Task: Unexpected error generating report %s: %s", report_id, str(e), exc_info=True)
+                    await session.rollback()
                     try:
-                        await analysis_repository.update_analysis_failed(analysis)
-                        await repository.update_report_failed(report, user_reports_key)
+                        await analysis_repository.update_analysis_failed_by_id(analysis_id)
+                        await repository.update_report_failed_by_id(report_id)
+                        await session.commit()
+                        logger.info("Background Task: Report %s marked as failed", report_id)
                     except Exception:
-                        pass
+                        logger.error("Background Task: Failed to persist failure state for report %s", report_id, exc_info=True)
                     return
         finally:
-            await redis_client.aclose()
+            if redis_client is not None:
+                await redis_client.aclose()
         
     async def analyze_comments (self, comments: list) -> dict:
 

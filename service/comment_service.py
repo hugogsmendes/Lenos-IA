@@ -1,8 +1,6 @@
 from repository.comment_repository import Comment_Repository
-from service.oauth_service import Oauth_Service
 import re
-from googleapiclient.discovery import build
-import googleapiclient.errors
+from googleapiclient.errors import HttpError
 from utils.exceptions import BadRequest, NotFound, Forbidden
 import asyncio
 from utils.logging import get_logger
@@ -37,15 +35,14 @@ _EMOJI_PATTERN = re.compile(
 
 class Comment_Service:
 
-    def __init__(self, repository: Comment_Repository, oauth_service: Oauth_Service):
+    def __init__(self, repository: Comment_Repository):
         self.repository = repository
-        self.oauth_service = oauth_service
 
-    async def verify_video_exists (self, video_id: str):
+    async def verify_video_exists (self, youtube_service, video_id: str):
 
         try:
             logger.info("Verifying existence of video %s on YouTube", video_id)
-            request = self.youtube_service.videos().list(
+            request = youtube_service.videos().list(
                 part = "snippet",
                 id = video_id
             )
@@ -59,7 +56,7 @@ class Comment_Service:
             logger.info("Video %s verified successfully", video_id)
             return
         
-        except googleapiclient.errors.HttpError as error:
+        except HttpError as error:
             status_code = error.resp.status
             logger.warning("YouTube API error (HTTP %s) verifying video %s: %s", status_code, video_id, str(error))
             
@@ -74,7 +71,7 @@ class Comment_Service:
             logger.error("Unexpected error verifying video %s: %s", video_id, str(e), exc_info=True)
             raise BadRequest(detail = f"Erro {str(e)}")
 
-    async def get_comments_by_video_id (self, video_id: str, max_comments: int = MAX_COMMENTS):
+    async def get_comments_by_video_id (self, youtube_service, video_id: str, max_comments: int = MAX_COMMENTS):
 
         try:
             logger.info("Fetching up to %s comments for video %s", max_comments, video_id)
@@ -82,7 +79,7 @@ class Comment_Service:
             next_page_token = None
             
             while len(all_items) < max_comments:
-                request = self.youtube_service.commentThreads().list(
+                request = youtube_service.commentThreads().list(
                     part = "snippet",
                     maxResults = min(100, max_comments - len(all_items)),
                     order = "relevance",
@@ -105,9 +102,13 @@ class Comment_Service:
             logger.info("Fetched %s comments for video %s", len(all_items), video_id)
             return {"items": all_items[:max_comments], "pageInfo": response.get("pageInfo", {})}
         
-        except googleapiclient.errors.HttpError as error:
+        except HttpError as error:
             status_code = error.resp.status
             logger.error("YouTube API error (HTTP %s) fetching comments for video %s: %s", status_code, video_id, str(error.error_details))
+            return
+        
+        except Exception as e:
+            logger.error("Unexpected error in background task get comments by video id: %s", str(e), exc_info=True)
             return
         
     def processing_comments(self, comments: dict):

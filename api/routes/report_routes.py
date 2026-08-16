@@ -12,7 +12,7 @@ report_router = APIRouter(prefix = "/v1/user", tags = ["report"])
 
 generete_report_responses = {
     201: {"model": ResponseReportCreate, "description": "Relatório criado"},
-    400: {"model": MessageError, "description": "URL vídeo inválida, Limite de relatório atingido ou Relatório já gerado"},
+    400: {"model": MessageError, "description": "URL vídeo inválida, Limite de relatório atingido, Relatório já gerado ou Conta Youtube não conectada"},
     403: {"model": MessageError, "description": "Sem permissão"},
     404: {"model": MessageError, "description": "Vídeo não encontrado no YouTube"},
     429: {"model": RateLimitError, "description": "Limite de requisição"},
