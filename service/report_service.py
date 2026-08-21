@@ -176,14 +176,14 @@ class Report_Service:
             exists_report = await self.analysis_service.get_analysis_by_youtube_video_id(youtube_video_id, user_id)
 
             if exists_report:
-                logger.warning("Report creation rejected: video %s already has a report for user %s", youtube_video_id, user_id)
-                raise BadRequest(detail = f"Relatório do vídeo id: {youtube_video_id} já gerado")
+                logger.warning("Report creation rejected: video_id %s already has a report for user %s", youtube_video_id, user_id)
+                raise BadRequest(detail = f"Relatório do video ID: {youtube_video_id} já gerado")
             
             access_token, refresh_token = await self.oauth_service.get_tokens_by_user_id(user_id)
             youtube_service = self.oauth_service.get_youtube_service(access_token, refresh_token)
 
-            await self.comment_service.verify_video_exists(youtube_service, youtube_video_id)
-                
+            channel_id = await self.comment_service.get_channel_id_by_video_id(youtube_service, youtube_video_id)
+            
             user_reports_key = f"{self.repository.cache_key}_{user_id}"
 
             try:
@@ -191,7 +191,7 @@ class Report_Service:
                 new_report = await self.repository.create_report(new_analysis.id)
                 await self.repository.session.commit()
             except Exception as e:
-                logger.error("Failed to create analysis/report pair for user %s, video %s: %s", user_id, youtube_video_id, str(e), exc_info=True)
+                logger.error("Failed to create analysis/report pair for user %s, video_id %s: %s", user_id, youtube_video_id, str(e), exc_info=True)
                 raise
 
             try:
@@ -230,7 +230,7 @@ class Report_Service:
                 comment_service = Comment_Service(comment_repository)
 
                 try:
-                    logger.info("Background Task: Generating report %s for video %s", report_id, video_id)
+                    logger.info("Background Task: Generating report %s for video_id %s", report_id, video_id)
                     comments = await comment_service.get_comments_by_video_id(youtube_service, video_id)
 
                     if not comments:
@@ -267,13 +267,13 @@ class Report_Service:
                         await analysis_repository.update_analysis_failed_by_id(analysis_id)
                         await repository.update_report_failed_by_id(report_id)
                         await session.commit()
-                        logger.info("Background Task: Report %s marked as failed", report_id)
+                        logger.info("Background Task: Report ID %s marked as failed", report_id)
                     except Exception:
-                        logger.error("Background Task: Failed to persist failure state for report %s", report_id, exc_info=True)
+                        logger.error("Background Task: Failed to persist failure state for report_id %s", report_id, exc_info=True)
                     return
 
                 except Exception as e:
-                    logger.error("Background Task: Unexpected error generating report %s: %s", report_id, str(e), exc_info=True)
+                    logger.error("Background Task: Unexpected error generating report_id %s: %s", report_id, str(e), exc_info=True)
                     await session.rollback()
                     try:
                         await analysis_repository.update_analysis_failed_by_id(analysis_id)
@@ -281,7 +281,7 @@ class Report_Service:
                         await session.commit()
                         logger.info("Background Task: Report %s marked as failed", report_id)
                     except Exception:
-                        logger.error("Background Task: Failed to persist failure state for report %s", report_id, exc_info=True)
+                        logger.error("Background Task: Failed to persist failure state for report_id %s", report_id, exc_info=True)
                     return
         finally:
             if redis_client is not None:
@@ -335,7 +335,7 @@ class Report_Service:
         except HTTPException:
             raise
         except Exception as e:
-            logger.error("Unexpected error retrieving report %s: %s", report_id, str(e), exc_info=True)
+            logger.error("Unexpected error retrieving report_id %s: %s", report_id, str(e), exc_info=True)
             raise BadGateway
     
     async def get_reports_by_user (self, user_id: str):
@@ -382,13 +382,13 @@ class Report_Service:
             user_reports_key = f"{self.repository.cache_key}_{user_id}"
 
             await self.repository.update_report(schema, report, user_reports_key)
-            logger.info("Report %s updated successfully by user %s", report_id, user_id)
+            logger.info("Report ID %s updated successfully by user %s", report_id, user_id)
             return None
 
         except HTTPException:
             raise
         except Exception as e:
-            logger.error("Unexpected error updating report %s: %s", report_id, str(e), exc_info=True)
+            logger.error("Unexpected error updating report_id %s: %s", report_id, str(e), exc_info=True)
             raise BadGateway
         
     async def delete_report (self, report_id: UUID, user_id: str):
@@ -400,7 +400,7 @@ class Report_Service:
 
             await self.repository.cache.delete(user_reports_key)
 
-            logger.info("Report %s and associated analysis deleted successfully for user %s", report_id, user_id)
+            logger.info("Report ID %s and associated analysis deleted successfully for user %s", report_id, user_id)
             return None
         
         except HTTPException:
@@ -420,13 +420,13 @@ class Report_Service:
             logger.info("Generating PDF for report %s", report_id)
             pdf_bytes = await asyncio.to_thread(self.generate_pdf, report)
             
-            logger.info("PDF generated successfully for report %s", report_id)
+            logger.info("PDF generated successfully for report_id %s", report_id)
             return pdf_bytes, "Relatorio"
 
         except HTTPException:
             raise
         except Exception as e:
-            logger.error("Unexpected error generating PDF for report %s: %s", report_id, str(e), exc_info=True)
+            logger.error("Unexpected error generating PDF for report_id %s: %s", report_id, str(e), exc_info=True)
             raise BadGateway
         
     def generate_pdf (self, report: Report) -> bytes:

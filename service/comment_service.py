@@ -38,10 +38,10 @@ class Comment_Service:
     def __init__(self, repository: Comment_Repository):
         self.repository = repository
 
-    async def verify_video_exists (self, youtube_service, video_id: str):
+    async def get_channel_id_by_video_id (self, youtube_service, video_id: str):
 
         try:
-            logger.info("Verifying existence of video %s on YouTube", video_id)
+            logger.info("Verifying existence of video_id %s on YouTube", video_id)
             request = youtube_service.videos().list(
                 part = "snippet",
                 id = video_id
@@ -50,15 +50,21 @@ class Comment_Service:
             response = await asyncio.to_thread(request.execute)
             
             if response.get("pageInfo", {}).get("totalResults", 0) == 0:
-                logger.warning("Video %s not found on YouTube", video_id)
+                logger.warning("Video ID %s not found on YouTube", video_id)
                 raise NotFound(register = video_id, detail = "não encontrado no YouTube")
             
-            logger.info("Video %s verified successfully", video_id)
-            return
+            items = response.get("items", [])
+            snippet = items[0]["snippet"]
+            channel_id = snippet["channelId"]
+
+            logger.info("Video ID %s verified successfully", video_id)
+            logger.info("Channel ID %s return", channel_id)
+
+            return channel_id
         
         except HttpError as error:
             status_code = error.resp.status
-            logger.warning("YouTube API error (HTTP %s) verifying video %s: %s", status_code, video_id, str(error))
+            logger.warning("YouTube API error (HTTP %s) verifying video_id %s: %s", status_code, video_id, str(error))
             
             if status_code == 404:
                 raise NotFound(register = video_id, detail = "não encontrado no Youtube")
@@ -68,13 +74,13 @@ class Comment_Service:
                 raise BadRequest(detail = f"Video ID inválido")
 
         except Exception as e:
-            logger.error("Unexpected error verifying video %s: %s", video_id, str(e), exc_info=True)
+            logger.error("Unexpected error verifying video_id %s: %s", video_id, str(e), exc_info=True)
             raise BadRequest(detail = f"Erro {str(e)}")
 
     async def get_comments_by_video_id (self, youtube_service, video_id: str, max_comments: int = MAX_COMMENTS):
 
         try:
-            logger.info("Fetching up to %s comments for video %s", max_comments, video_id)
+            logger.info("Fetching up to %s comments for video_id %s", max_comments, video_id)
             all_items = []
             next_page_token = None
             
@@ -99,16 +105,16 @@ class Comment_Service:
                 if not next_page_token:
                     break
             
-            logger.info("Fetched %s comments for video %s", len(all_items), video_id)
+            logger.info("Fetched %s comments for video_id %s", len(all_items), video_id)
             return {"items": all_items[:max_comments], "pageInfo": response.get("pageInfo", {})}
         
         except HttpError as error:
             status_code = error.resp.status
-            logger.error("YouTube API error (HTTP %s) fetching comments for video %s: %s", status_code, video_id, str(error.error_details))
+            logger.error("YouTube API error (HTTP %s) fetching comments for video_id %s: %s", status_code, video_id, str(error.error_details))
             return
         
         except Exception as e:
-            logger.error("Unexpected error in background task get comments by video id: %s", str(e), exc_info=True)
+            logger.error("Unexpected error in background task get comments by video_id: %s", str(e), exc_info=True)
             return
         
     def processing_comments(self, comments: dict):

@@ -39,4 +39,4 @@ class User (Base):
     
     analyses: Mapped[list["Analysis"]] = relationship(back_populates = "user", lazy = "subquery", cascade = "all, delete")
     answers: Mapped[list["Answer"]] = relationship(back_populates = "user", lazy = "subquery", cascade = "all, delete")
-    oauth: Mapped["Oauth"] = relationship(back_populates = "user", lazy = "subquery", cascade = "all, delete")
+    oauths: Mapped[list["Oauth"]] = relationship(back_populates = "user", lazy = "subquery", cascade = "all, delete")

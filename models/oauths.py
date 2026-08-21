@@ -32,5 +32,5 @@ class Oauth (Base):
         onupdate = func.now(),
         nullable = False)
 
-    user: Mapped["User"] = relationship(back_populates = "oauth", lazy = "subquery", passive_deletes = True)
+    user: Mapped["User"] = relationship(back_populates = "oauths", lazy = "subquery", passive_deletes = True)
     

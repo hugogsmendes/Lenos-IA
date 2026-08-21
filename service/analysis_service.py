@@ -1,12 +1,10 @@
 from repository.analysis_repository import Analysis_Repository
 from fastapi import HTTPException
-from utils.exceptions import BadGateway, BadRequest, Forbidden
+from utils.exceptions import BadGateway, BadRequest
 from uuid import UUID
-from models.analyses import Analysis
 from utils.logging import get_logger
 
 logger = get_logger("analysis_service")
-
 
 
 class Analysis_Service:
@@ -17,14 +15,14 @@ class Analysis_Service:
     async def create_analysis(self, user_id: str, video_url: str, youtube_video_id: str):
         
         try:
-            logger.info("Creating new analysis for user %s, video %s", user_id, youtube_video_id)
+            logger.info("Creating new analysis for user %s, video_id %s", user_id, youtube_video_id)
             new_analysis = await self.repository.create_analysis(user_id, video_url, youtube_video_id)
             return new_analysis
         
         except HTTPException:
             raise
         except Exception as e:
-            logger.error("Failed to create analysis for video %s: %s", youtube_video_id, str(e), exc_info=True)
+            logger.error("Failed to create analysis for video_id %s: %s", youtube_video_id, str(e), exc_info=True)
             raise BadGateway
         
     async def get_analysis_by_report_id (self, report_id: UUID, user_id: str): 
@@ -58,27 +56,6 @@ class Analysis_Service:
             logger.error("Error deleting analysis for report_id %s: %s", report_id, str(e), exc_info=True)
             raise BadGateway
         
-    async def update_analysis_failed (self, analysis: Analysis):
-        try:
-            logger.warning("Setting analysis status to FAILED for video %s", analysis.youtube_video_id)
-            return await self.repository.update_analysis_failed(analysis)
-
-        except HTTPException:
-            raise
-        except Exception as e:
-            logger.error("Error updating analysis to FAILED for video %s: %s", analysis.youtube_video_id, str(e), exc_info=True)
-            raise BadGateway
-        
-    async def update_analysis_done (self, analysis: Analysis):
-        try:
-            logger.info("Setting analysis status to DONE for video %s", analysis.youtube_video_id)
-            return await self.repository.update_analysis_done(analysis)
-
-        except HTTPException:
-            raise
-        except Exception as e:
-            logger.error("Error updating analysis to DONE for video %s: %s", analysis.youtube_video_id, str(e), exc_info=True)
-            raise BadGateway
         
     async def get_analysis_by_youtube_video_id (self, youtube_video_id: str, user_id: str):
         try:
