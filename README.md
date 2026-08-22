@@ -16,13 +16,16 @@ Este projeto foi concebido como um trabalho de graduação (Fatec Franca) e foca
 
 ## ✨ Funcionalidades
 
-*   **Autenticação Segura:** Registro e login de usuários com JWT armazenados em cookies HttpOnly e Secure.
-*   **Análise de Vídeos:** Extração automática de comentários via YouTube Data API.
-*   **Inteligência Artificial:** Geração de relatórios analíticos utilizando Google Gemini.
-*   **Relatórios Personalizados:** Visualização, atualização e exclusão de análises anteriores.
-*   **Notificações por E-mail:** Verificação de conta.
-*   **Rate Limiting:** Proteção de endpoints sensíveis utilizando SlowAPI.
-*   **Processamento Assíncrono:** Tarefas pesadas (análise de IA) executadas em background para maior fluidez.
+*   **Autenticação e autorização** com JWT em cookies HttpOnly.
+*   **Integração com OAuth 2.0 do Google** para conectar a conta do usuário.
+*   **Validação de propriedade do vídeo**, garantindo que o relatório seja gerado apenas para vídeos do canal autenticado.
+*   **Coleta de comentários via YouTube Data API** com paginação e tratamento de erros.
+*   **Geração de relatórios com Gemini**, incluindo análise de sentimento, temas, elogios, críticas e recomendações.
+*   **Persistência em PostgreSQL** com ORM assíncrono via SQLAlchemy.
+*   **Cache em Redis** para acelerar listagens e invalidação após alterações.
+*   **Enfileiramento de processamento em background** para geração dos relatórios.
+*   **Envio de e-mails transacionais** para verificação de conta e recuperação de senha.
+*   **Rate limiting** em rotas sensíveis com SlowAPI.
 
 ## 🛠️ Tecnologias Utilizadas
 
@@ -38,110 +41,84 @@ Este projeto foi concebido como um trabalho de graduação (Fatec Franca) e foca
 | **Argon2** | Hashing de senhas de última geração |
 | **Pydantic v2** | Validação de dados e modelagem de schemas |
 | **Resend** | Serviço de entrega de e-mails transacionais |
+| **HTTPX** | Requisições assíncronas para integrações externas |
+| **Google API Python Client** | Integração com serviços do YouTube |
+| **Google Auth** | Credenciais OAuth para o fluxo do YouTube |
+| **Google GenAI** | Cliente oficial para geração com Gemini |
+| **SlowAPI** | Limitação de taxa por endpoint |
+| **Pydantic Settings** | Carregamento de variáveis de ambiente |
 
 ## 🏗️ Arquitetura do Projeto
 
-O projeto segue um padrão de **Arquitetura em Camadas (Layered Architecture)** para garantir manutenibilidade e escalabilidade:
+O projeto segue uma **arquitetura em camadas** com separação clara de responsabilidades:
 
-1.  **Routes (`api/routes/`)**: Define os endpoints da API e lida com as requisições/respostas HTTP.
-2.  **Services (`service/`)**: Contém a lógica de negócio, orquestrando repositórios e serviços externos (Gemini, YouTube).
-3.  **Repositories (`repository/`)**: Camada de acesso a dados responsável pelas queries SQLAlchemy.
-4.  **Models (`models/`)**: Definição das tabelas e entidades do banco de dados.
-5.  **Utils (`utils/`)**: Schemas de validação, exceções customizadas e utilitários de segurança.
+1. **`src/api/routes/`**: expõe os endpoints HTTP e define os contratos de resposta.
+2. **`src/service/`**: concentra as regras de negócio e a orquestração dos fluxos.
+3. **`src/repository/`**: cuida do acesso a dados com SQLAlchemy.
+4. **`src/models/`**: define as entidades do banco de dados.
+5. **`src/utils/`**: reúne schemas, exceções, autenticação, logging e helpers.
+6. **`src/database/`**: centraliza as conexões com PostgreSQL e Redis.
+7. **`alembic/`**: contém as migrações de schema do banco.
 
 ### Estrutura de Diretórios
 
 ```text
 /
 ├── alembic/            # Scripts de migração de banco de dados
-├── api/
-│   └── routes/         # Endpoints: user, report, question, answer
-├── app/
-│   └── main.py         # Inicialização do FastAPI e roteamento
-├── database/           # Configuração de conexões (Postgres, Redis)
-├── models/             # Modelos ORM do SQLAlchemy
-├── repository/         # Camada de persistência de dados
-├── service/            # Lógica de negócio e integrações
-├── tests/              # Testes automatizados com Pytest
-├── utils/              # Schemas Pydantic e middlewares
+├── src/
+│   ├── api/routes/      # Endpoints da API
+│   ├── app/main.py      # Inicialização do FastAPI e roteamento
+│   ├── database/       # Conexões com Postgres e Redis
+│   ├── models/         # Modelos ORM do SQLAlchemy
+│   ├── repository/     # Camada de persistência de dados
+│   ├── service/        # Lógica de negócio e integrações
+│   ├── utils/          # Schemas, exceções, logging e helpers
+│   └── middlewares/    # Middlewares da aplicação
 └── alembic.ini         # Configuração do Alembic
 ```
 
-## 🚀 Instalação e Execução
-
-### Pré-requisitos
-
-*   Python 3.12+
-*   PostgreSQL
-*   Redis
-*   Chaves de API (Google Cloud e Resend)
-
-### Passo a Passo
-
-1.  **Clone o repositório:**
-    ```bash
-    git clone https://github.com/seu-usuario/lenos-ia.git
-    cd lenos-ia
-    ```
-
-2.  **Crie e ative um ambiente virtual:**
-    ```bash
-    python -m venv .venv
-    source .venv/bin/activate  # Linux/macOS
-    # .venv\Scripts\activate   # Windows
-    ```
-
-3.  **Instale as dependências:**
-    ```bash
-    pip install -r requirements.txt
-    ```
-
-4.  **Configure as variáveis de ambiente:**
-    Crie um arquivo `.env` na raiz do projeto baseado no `.env.example`:
-    ```bash
-    cp .env.example .env
-    ```
-    Preencha as chaves:
-    *   `key_youtube`: Chave da API do Google Cloud (YouTube Data API v3)
-    *   `key_gemini`: Chave da API do Google Gemini
-    *   `DATABASE_URL_ASYNC`: Ex: `postgresql+asyncpg://user:pass@localhost/dbname`
-    *   `REDIS_URL`: Ex: `redis://localhost:6379`
-
-5.  **Execute as migrações:**
-    ```bash
-    alembic upgrade head
-    ```
-
-6.  **Inicie a aplicação:**
-    ```bash
-    uvicorn app.main:app --reload
-    ```
-
 ## 📡 API Endpoints (Principais)
 
-### Autenticação (`/v1`)
-*   `POST /register`: Registro de novo usuário.
-*   `POST /login`: Autenticação e recebimento de cookies.
-*   `GET /me`: Dados do usuário logado.
-*   `POST /verify_email`: Validação de conta via token.
+### Autenticação e conta
+*   `POST /v1/user/register`: Registro de novo usuário.
+*   `POST /v1/user/login`: Autenticação e recebimento de cookies.
+*   `POST /v1/user/logout`: Remove os cookies de autenticação.
+*   `POST /v1/user/refresh`: Atualiza o access token.
+*   `GET /v1/user/me`: Dados do usuário logado.
+*   `POST /v1/user/verify-email`: Verificação de email.
+*   `POST /v1/user/forgot-password`: Solicita redefinição de senha.
+*   `POST /v1/user/reset-password`: Redefine a senha.
 
-### Relatórios (`/v1/user`)
-*   `POST /generate_report`: Inicia análise de um vídeo (Background Task).
-*   `GET /reports`: Lista todos os relatórios do usuário.
-*   `GET /report/{id}`: Detalhes de um relatório específico.
-*   `GET /report/{id}/pdf`: Faz o download do relatório em formato PDF.
-*   `DELETE /delete_report/{id}`: Remove um relatório.
+### Relatórios
+*   `POST /v1/user/generate-report`: Inicia a geração de um relatório para um vídeo do YouTube.
+*   `GET /v1/user/reports`: Lista os relatórios do usuário.
+*   `GET /v1/user/report/{id}`: Retorna os detalhes de um relatório específico.
+*   `GET /v1/user/report/{id}/pdf`: Faz o download do relatório em PDF.
+*   `PUT /v1/user/report/{id}`: Atualiza o título de um relatório.
+*   `DELETE /v1/user/report/{id}`: Remove um relatório.
 
-### Perguntas e Respostas (`/v1`)
-*   `POST /create_question`: Cria uma nova pergunta de feedback.
-*   `POST /user/answer_question`: Registra a resposta do usuário a uma pergunta.
+### Perguntas e respostas
+*   `GET /v1/questions`: Lista as perguntas cadastradas.
+*   `POST /v1/user/answer`: Registra a resposta de um usuário.
+*   `PUT /v1/user/answer/{id}`: Atualiza uma resposta.
+*   `GET /v1/user/answers`: Lista as respostas do usuário.
 
-## 🛠️ Melhorias Futuras
+### OAuth do YouTube
+*   `GET /v1/oauth2/login`: Inicia a autorização com a conta do Google.
+*   `GET /v1/oauth2/callback`: Conclui a autorização e salva os tokens.
 
-*   [ ] Dashboard visual para métricas agregadas.
-*   [ ] Suporte para análise de múltiplos vídeos simultaneamente.
-*   [ ] Integração com outras redes sociais (TikTok, Instagram).
+## 🔧 Fluxos Principais
 
+*   O usuário autentica na aplicação com JWT em cookies.
+*   O fluxo OAuth conecta a conta do YouTube e salva `access_token`, `refresh_token` e `channel_id`.
+*   Ao criar um relatório, o sistema valida se o vídeo pertence ao canal do usuário.
+*   Os comentários são coletados do YouTube, processados e enviados ao Gemini.
+*   A análise é persistida no PostgreSQL e o cache do Redis é invalidado após atualizações.
+
+## 📌 Observações
+
+*   O projeto usa logging estruturado para rastrear fluxo, rejeições e falhas.
+*   As tarefas de geração de relatório rodam em background para não bloquear a requisição principal.
 ---
 
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/hugogsmendes/Lenos-IA)
