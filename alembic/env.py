@@ -7,9 +7,8 @@ from alembic import context
 
 import sys
 import os
-from settings.config import Settings
+from src.settings.config import settings
 
-settings = Settings()
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 # this is the Alembic Config object, which provides
@@ -29,15 +28,15 @@ if config.config_file_name is not None:
 # for 'autogenerate' support
 # from myapp import mymodel
 # target_metadata = mymodel.Base.metadata
-from database.postgres_client import Base
+from src.database.postgres_client import Base
 
-from models.users import User
-from models.analyses import Analysis
-from models.comments import Comment
-from models.reports import Report
-from models.answers import Answer
-from models.questions import Question
-from models.oauths import Oauth
+from src.models.users import User
+from src.models.analyses import Analysis
+from src.models.comments import Comment
+from src.models.reports import Report
+from src.models.answers import Answer
+from src.models.questions import Question
+from src.models.oauths import Oauth
 
 
 target_metadata = Base.metadata

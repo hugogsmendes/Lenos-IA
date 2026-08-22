@@ -1,0 +1,63 @@
+from src.models.users import User
+from src.utils.schemas import RegisterUser, UpdateUser
+from src.utils.security import hash_password
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+
+class User_Repository:
+
+    def __init__(self, session: AsyncSession):
+        self.session = session
+
+    async def get_user_by_email (self, email: str) -> User | None:
+
+        query = select(User).filter(User.email == email)
+
+        result = await self.session.execute(query)
+
+        return result.scalar_one_or_none()
+    
+    async def create_user (self, schema: RegisterUser) -> User:
+
+        new_user = User(name = schema.name,
+                        email = schema.email,
+                        phone = schema.phone,
+                        password_hash = hash_password(schema.password),
+                        terms_accepted = schema.terms_accepted)
+
+        self.session.add(new_user)
+        await self.session.commit()
+        await self.session.refresh(new_user)
+
+        return new_user
+    
+    async def update_user (self, schema: UpdateUser, user: User) -> User:
+        update_data = schema.model_dump(exclude_unset = True, exclude_none = True)
+
+        if not update_data:
+            return user
+
+        for field, value in update_data.items():
+            setattr(user, field, value)
+
+        await self.session.commit()
+        await self.session.refresh(user)
+        return user
+
+    async def update_password (self, new_password: str , user: User) -> None:
+        
+        user.password_hash = hash_password(new_password)
+        await self.session.commit()
+        await self.session.refresh(user)
+    
+    async def delete_user (self, user: User) -> None:
+
+        await self.session.delete(user)
+        await self.session.commit()
+
+    async def update_email_verified (self, user: User) -> None:
+        
+        user.email_verified = True
+        await self.session.commit()
+        await self.session.refresh(user)
+
