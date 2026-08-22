@@ -10,7 +10,7 @@
 
 ## 📝 Descrição
 
-O **Lenos-IA** é uma plataforma de backend robusta desenvolvida para automatizar a análise de feedback em vídeos do YouTube. Utilizando o poder do **Google Gemini AI**, o sistema extrai e processa comentários para gerar relatórios detalhados sobre o sentimento da audiência, temas recorrentes e métricas comportamentais.
+O **Lenos-IA** é uma API robusta desenvolvida para automatizar a análise de feedback em vídeos do YouTube. Utilizando o poder do **Google Gemini AI**, o sistema extrai e processa comentários para gerar relatórios detalhados sobre o sentimento da audiência, temas recorrentes e métricas comportamentais.
 
 Este projeto foi concebido como um trabalho de graduação (Fatec Franca) e foca em fornecer insights acionáveis para criadores de conteúdo, permitindo uma compreensão profunda da recepção de seus vídeos de forma rápida e precisa.
 
