@@ -103,7 +103,7 @@ O projeto segue uma **arquitetura em camadas** com separação clara de responsa
 *   `PUT /v1/user/answer/{id}`: Atualiza uma resposta.
 *   `GET /v1/user/answers`: Lista as respostas do usuário.
 
-### OAuth do YouTube
+### OAuth do Google
 *   `GET /v1/oauth2/login`: Inicia a autorização com a conta do Google.
 *   `GET /v1/oauth2/callback`: Conclui a autorização e salva os tokens.
 
