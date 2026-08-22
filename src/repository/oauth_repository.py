@@ -21,3 +21,11 @@ class Oauth_Repository:
         new_oauth = Oauth(**oauth_dict)
         self.session.add(new_oauth)
         await self.session.commit()
+
+    async def get_channel_id_by_user_id (self, user_id: str) -> tuple | None:
+
+        query = select(Oauth.channel_id).filter(Oauth.user_id == user_id).order_by(Oauth.created_at.desc())
+
+        result = await self.session.execute(query)
+
+        return result.first()

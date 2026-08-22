@@ -173,3 +173,23 @@ class Oauth_Service:
 
         logger.info("YouTube service client built successfully")
         return build(self.api_service_name, self.api_version, credentials = credentials)
+
+    async def get_channel_id_by_user_id (self, user_id: str):
+
+        try:
+            logger.info("Fetching stored YouTube channel id for user_id: %s", user_id)
+            channel_id = await self.repository.get_channel_id_by_user_id(user_id)
+
+            if not channel_id:
+                logger.warning("No stored YouTube channel id found for user_id: %s", user_id)
+                raise NotFound(detail = "Canal não encontrado")
+
+            logger.info("Stored YouTube channel id fetched successfully for user_id: %s", user_id)
+            return channel_id[0]
+
+        except HTTPException:
+            raise
+        except Exception as e:
+            logger.error("Unexpected error fetching stored YouTube channel id for user_id %s: %s", user_id, str(e), exc_info=True)
+            raise BadGateway
+        

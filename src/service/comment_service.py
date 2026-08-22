@@ -56,7 +56,7 @@ class Comment_Service:
             channel_id = snippet["channelId"]
 
             logger.info("Video ID %s verified successfully", video_id)
-            logger.info("Channel ID %s return", channel_id)
+            logger.info("Channel ID %s returned for video_id %s", channel_id, video_id)
 
             return channel_id
         

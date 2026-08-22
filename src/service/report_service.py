@@ -8,7 +8,7 @@ from src.service.comment_service import Comment_Service
 from src.repository.report_repository import Report_Repository
 from src.service.oauth_service import Oauth_Service
 from src.utils.schemas import GenerateReport, UpdatedReport
-from src.utils.exceptions import BadGateway, BadRequest
+from src.utils.exceptions import BadGateway, BadRequest, Forbidden
 from src.utils.processing import extract_youtube_video_id
 from src.utils.logging import get_logger
 from src.settings.config import settings
@@ -182,7 +182,27 @@ class Report_Service:
             access_token, refresh_token = await self.oauth_service.get_tokens_by_user_id(user_id)
             youtube_service = self.oauth_service.get_youtube_service(access_token, refresh_token)
 
-            channel_id = await self.comment_service.get_channel_id_by_video_id(youtube_service, youtube_video_id)
+            channel_id_by_video = await self.comment_service.get_channel_id_by_video_id(youtube_service, youtube_video_id)
+            channel_id_by_user = await self.oauth_service.get_channel_id_by_user_id(user_id)
+            logger.info(
+                "Comparing YouTube channel ids for user %s: video_channel_id = %s, user_channel_id = %s",
+                user_id,
+                channel_id_by_video,
+                channel_id_by_user)
+
+            if channel_id_by_video != channel_id_by_user:
+                logger.warning(
+                    "Report creation rejected: video_id %s does not belong to user %s channel (video_channel_id=%s, user_channel_id=%s)",
+                    youtube_video_id,
+                    user_id,
+                    channel_id_by_video,
+                    channel_id_by_user)
+                raise Forbidden(detail = f"Vídeo ID {youtube_video_id} não pertence ao seu canal")
+            
+            logger.info(
+                "Video ownership validated successfully for user %s and video_id %s",
+                user_id,
+                youtube_video_id)
             
             user_reports_key = f"{self.repository.cache_key}_{user_id}"
 

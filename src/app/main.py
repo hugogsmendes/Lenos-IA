@@ -41,6 +41,10 @@ from src.api.routes.answer_routes import answer_router
 from src.api.routes.report_routes import report_router
 from src.api.routes.oauth_routes import oauth_router
 
+@app.get("/health", status_code = 200, tags = ["health"])
+async def health ():
+    return {"message": "API em execução"}
+
 app.include_router(user_router)
 app.include_router(question_router)
 app.include_router(answer_router)
