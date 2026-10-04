@@ -18,7 +18,7 @@ class Email_Service:
 
         try:
             logger.info("Sending verification email to %s", to_email)
-            verification_url = f"{self.front}/v1/verify-email?token={token}"
+            verification_url = f"{self.front}/v1/user/verify-email?token={token}"
             
             params = {
                 "from": self.email_from,
@@ -43,14 +43,14 @@ class Email_Service:
 
         try:
             logger.info("Sending verification password to %s", to_email)
-            verification_url = f"{self.front}/v1/reset-password?token={token}"
+            verification_url = f"{self.front}/v1/user/reset-password?token={token}"
             
             params = {
                 "from": self.email_from,
                 "to": [to_email],
                 "subject": "Altere sua senha",
                 "html": f"""
-                    <h1>Bem-vindo à Lenos IA</h1>
+                    <h1>Recuperação de conta Lenos IA</h1>
                     <p>Clique no link abaixo para alterar sua senha:</p>
                     <a href="{verification_url}">Alterar Senha</a>
                 """
