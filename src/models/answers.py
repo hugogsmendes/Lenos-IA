@@ -14,7 +14,7 @@ class Answer (Base):
 
     __tablename__ = "answers"
 
-    id: Mapped[uuid.UUID] = mapped_column(UUID, primary_key = True, default = uuid.uuid4())
+    id: Mapped[uuid.UUID] = mapped_column(UUID, primary_key = True, default = uuid.uuid4)
     user_id: Mapped[uuid.UUID] = mapped_column(UUID, ForeignKey("users.id", ondelete = "CASCADE"), nullable = False)
     question_id: Mapped[uuid.UUID] = mapped_column(UUID, ForeignKey("questions.id"), nullable = False)
     answer: Mapped[str] = mapped_column(String, nullable = False)

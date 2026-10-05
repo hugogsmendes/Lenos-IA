@@ -16,7 +16,7 @@ class Analysis (Base):
 
     __tablename__ = "analyses"
 
-    id: Mapped[uuid.UUID] = mapped_column(UUID, primary_key = True, default = uuid.uuid4())
+    id: Mapped[uuid.UUID] = mapped_column(UUID, primary_key = True, default = uuid.uuid4)
     user_id: Mapped[uuid.UUID] = mapped_column(UUID, ForeignKey("users.id", ondelete = "CASCADE"), nullable = False)
     video_url: Mapped[str] = mapped_column(String, nullable = False)
     youtube_video_id: Mapped[str] = mapped_column(String, nullable = False)

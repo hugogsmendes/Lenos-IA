@@ -13,7 +13,7 @@ class Oauth (Base):
 
     __tablename__ = "oauths"
 
-    id: Mapped[uuid.UUID] = mapped_column(UUID, primary_key = True, default = uuid.uuid4())
+    id: Mapped[uuid.UUID] = mapped_column(UUID, primary_key = True, default = uuid.uuid4)
     user_id: Mapped[uuid.UUID] = mapped_column(UUID, ForeignKey("users.id", ondelete = "CASCADE"), nullable = False)
     access_token: Mapped[str] = mapped_column(String, nullable = False)
     expires_in: Mapped[datetime] = mapped_column(DateTime(timezone = True), nullable = False)
