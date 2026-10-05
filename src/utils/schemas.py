@@ -250,6 +250,9 @@ class ResponseReport (BaseModel):
     url: str
     report: str
     status: str
+    processed_comments: int
+    processed_comments_positive: int
+    processed_comments_negative: int
 
 class MessageError (BaseModel):
 
