@@ -59,7 +59,8 @@ class Report_Service:
 
             Regras obrigatórias:
 
-            * Retorne um JSON com as seguinte estrutura: {titulo: Título curto, criativo e chamativo, markdown: Relatório em markdown}
+            * Retorne um JSON com as seguinte estrutura: 
+            {titulo: Título curto, criativo e chamativo, markdown: Relatório em markdown, processed_comments_positive: Quantidade de comentários positivo, processed_comments_negative: Quantidade de comentários negativo}
 
             * O título não pode ter mais de 50 caracteres
             * Não utilize HTML
@@ -269,8 +270,12 @@ class Report_Service:
 
                     title = report_dict.get("titulo")
                     markdown = report_dict.get("markdown")
+                    processed_comments_positive = report_dict.get("processed_comments_positive")
+                    processed_comments_negative = report_dict.get("processed_comments_negative")
+
                     await analysis_repository.update_analysis_done_by_id(analysis_id)
-                    await repository.update_report_done_by_id(report_id, self.prompt, title, markdown, len(processed_comments))
+                    await repository.update_report_done_by_id(report_id, self.prompt, title, markdown, len(processed_comments),
+                                                              processed_comments_positive, processed_comments_negative)
                     await session.commit()
                     logger.info("Background Task: Report %s successfully generated and saved", report_id)
 
@@ -349,7 +354,10 @@ class Report_Service:
                 "title": report.report_title,
                 "url": report.analysis.video_url,
                 "report": report.report_markdown,
-                "status": report.analysis.status
+                "status": report.analysis.status,
+                "processed_comments": report.processed_comments,
+                "processed_comments_positive": report.processed_comments_positive,
+                "processed_comments_negative": report.processed_comments_negative
             }
         
         except HTTPException:
@@ -377,9 +385,12 @@ class Report_Service:
                     "title": title,
                     "url": url,
                     "report": report,
-                    "status": status
+                    "status": status,
+                    "processed_comments": processed_comments,
+                    "processed_comments_positive": processed_comments_positive,
+                    "processed_comments_negative": processed_comments_negative
                 }
-            for report_id, title, url, report, status in reports]
+            for report_id, title, url, report, status, processed_comments, processed_comments_positive, processed_comments_negative in reports]
 
             await self.repository.cache.set(user_reports_key, json.dumps(result, default = str), ex = 3600)
 

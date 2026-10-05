@@ -25,7 +25,8 @@ class Report_Repository:
     async def get_reports_by_user (self, user_id: str) -> tuple[UUID, str, str, str, str]:
 
         query = (
-                select(Report.id, Report.report_title, Analysis.video_url ,Report.report_markdown, Analysis.status)
+                select(Report.id, Report.report_title, Analysis.video_url ,Report.report_markdown, Analysis.status, 
+                       Report.processed_comments, Report.processed_comments_positive, Report.processed_comments_negative)
                  .join(Report.analysis)
                  .filter(Analysis.user_id == user_id)
                  )
@@ -49,12 +50,15 @@ class Report_Repository:
         await self.cache.delete(cache_key)
         await self.session.refresh(report)
 
-    async def update_report_done_by_id (self, report_id: UUID, prompt: str, title: str, markdown: str, processed_comments: int) -> None:
+    async def update_report_done_by_id (self, report_id: UUID, prompt: str, title: str, markdown: str, processed_comments: int, 
+                                        processed_comments_positive: int, processed_comments_negative: int) -> None:
 
         query = update(Report).filter(Report.id == report_id).values(prompt = prompt,
                                                                      report_title = title,
                                                                      report_markdown = markdown,
-                                                                     processed_comments = processed_comments)
+                                                                     processed_comments = processed_comments,
+                                                                     processed_comments_positive = processed_comments_positive,
+                                                                     processed_comments_negative = processed_comments_negative)
         await self.session.execute(query)
 
     async def update_report_failed_by_id (self, report_id: UUID) -> None:
