@@ -270,7 +270,7 @@ class Report_Service:
                     title = report_dict.get("titulo")
                     markdown = report_dict.get("markdown")
                     await analysis_repository.update_analysis_done_by_id(analysis_id)
-                    await repository.update_report_done_by_id(report_id, self.prompt, title, markdown)
+                    await repository.update_report_done_by_id(report_id, self.prompt, title, markdown, len(processed_comments))
                     await session.commit()
                     logger.info("Background Task: Report %s successfully generated and saved", report_id)
 

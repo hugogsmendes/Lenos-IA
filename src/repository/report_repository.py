@@ -49,11 +49,12 @@ class Report_Repository:
         await self.cache.delete(cache_key)
         await self.session.refresh(report)
 
-    async def update_report_done_by_id (self, report_id: UUID, prompt: str, title: str, markdown: str) -> None:
+    async def update_report_done_by_id (self, report_id: UUID, prompt: str, title: str, markdown: str, processed_comments: int) -> None:
 
         query = update(Report).filter(Report.id == report_id).values(prompt = prompt,
                                                                      report_title = title,
-                                                                     report_markdown = markdown)
+                                                                     report_markdown = markdown,
+                                                                     processed_comments = processed_comments)
         await self.session.execute(query)
 
     async def update_report_failed_by_id (self, report_id: UUID) -> None:
