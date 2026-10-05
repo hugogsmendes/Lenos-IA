@@ -11,6 +11,7 @@ AUTH_URI = settings.AUTH_URI
 SCOPE = settings.SCOPE
 REDIRECT_URI = settings.REDIRECT_URI
 CLIENT_ID = settings.CLIENT_ID
+FRONT = settings.FRONT
 
 oauth_router = APIRouter(prefix = "/v1/oauth2", tags = ["oauth2"])
 
@@ -41,8 +42,10 @@ async def oauth_login (request: Request, current_user: dict = Depends(get_curren
 
 @oauth_router.get(path = "/callback", 
                   responses = oauth_callback_responses,
-                  status_code = status.HTTP_200_OK)
+                  status_code = status.HTTP_303_SEE_OTHER)
 @limiter.limit("10/minute")
 async def ouath_callback (request: Request, code: str, service: Oauth_Service = Depends(get_oauth_service), current_user: dict = Depends(get_current_user)):
     await service.create_user_oauth(current_user.get("id"), code)
-    return {"message": "Conta Youtube conectada com sucesso"}
+    dash_url = f"{FRONT}/dashboard"
+    return RedirectResponse(url = dash_url,
+                            status_code = 303)
