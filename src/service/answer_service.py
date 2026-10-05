@@ -23,7 +23,8 @@ class Answer_Service:
                 logger.warning("Answer attempt failed: question %s not found", schema.question_id)
                 raise NotFound("Question")
             
-            new_answer = await self.repository.answer_question(user_id, schema.question_id, schema.answer)
+            user_answers_key = f"{self.repository.cache_key}_{user_id}"
+            new_answer = await self.repository.answer_question(user_id, schema.question_id, schema.answer, user_answers_key)
             logger.info("Question %s answered successfully by user %s", schema.question_id, user_id)
             return new_answer
 

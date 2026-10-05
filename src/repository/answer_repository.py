@@ -12,13 +12,14 @@ class Answer_Repository:
         self.cache = cache
         self.cache_key = "answers"
 
-    async def answer_question(self, user_id: str, question_id: UUID, answer: str) -> Answer:
+    async def answer_question(self, user_id: str, question_id: UUID, answer: str, cache_key: str) -> Answer:
         
         new_anser = Answer(user_id = user_id,
                            question_id = question_id,
                            answer = answer)
         self.session.add(new_anser)
         await self.session.commit()
+        await self.cache.delete(cache_key)
         await self.session.refresh(new_anser)
 
         return new_anser
