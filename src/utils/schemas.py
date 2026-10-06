@@ -253,6 +253,7 @@ class ResponseReport (BaseModel):
     processed_comments: int
     processed_comments_positive: int
     processed_comments_negative: int
+    created_at: datetime
 
 class MessageError (BaseModel):
 

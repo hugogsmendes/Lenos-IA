@@ -357,7 +357,8 @@ class Report_Service:
                 "status": report.analysis.status,
                 "processed_comments": report.processed_comments,
                 "processed_comments_positive": report.processed_comments_positive,
-                "processed_comments_negative": report.processed_comments_negative
+                "processed_comments_negative": report.processed_comments_negative,
+                "created_at": report.created_at
             }
         
         except HTTPException:
@@ -388,9 +389,10 @@ class Report_Service:
                     "status": status,
                     "processed_comments": processed_comments,
                     "processed_comments_positive": processed_comments_positive,
-                    "processed_comments_negative": processed_comments_negative
+                    "processed_comments_negative": processed_comments_negative,
+                    "created_at": created_at
                 }
-            for report_id, title, url, report, status, processed_comments, processed_comments_positive, processed_comments_negative in reports]
+            for report_id, title, url, report, status, processed_comments, processed_comments_positive, processed_comments_negative, created_at in reports]
 
             await self.repository.cache.set(user_reports_key, json.dumps(result, default = str), ex = 3600)
 

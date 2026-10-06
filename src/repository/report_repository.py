@@ -26,7 +26,8 @@ class Report_Repository:
 
         query = (
                 select(Report.id, Report.report_title, Analysis.video_url ,Report.report_markdown, Analysis.status, 
-                       Report.processed_comments, Report.processed_comments_positive, Report.processed_comments_negative)
+                       Report.processed_comments, Report.processed_comments_positive, Report.processed_comments_negative,
+                       Report.created_at)
                  .join(Report.analysis)
                  .filter(Analysis.user_id == user_id)
                  )
