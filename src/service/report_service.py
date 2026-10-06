@@ -323,7 +323,7 @@ class Report_Service:
                 config = types.GenerateContentConfig(
                     system_instruction = self.prompt,
                     temperature = 0.2,
-                    max_output_tokens = 2000,
+                    max_output_tokens = 6000,
                     response_mime_type = "application/json"
                 ),
                 contents = f"Analise os seguintes comentários:\n{content_for_gemini}"
