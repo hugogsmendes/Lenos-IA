@@ -3,6 +3,7 @@ from src.models.reports import Report
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, update
 from uuid import UUID
+from datetime import datetime, timezone
 
 class Analysis_Repository:
 
@@ -21,7 +22,8 @@ class Analysis_Repository:
     
     async def get_analysis_by_report_id (self, report_id: UUID, user_id: str) -> Analysis | None:
 
-        query = select(Analysis).join(Analysis.report).filter(Report.id == report_id, Analysis.user_id == user_id)
+        query = select(Analysis).join(Analysis.report).filter(Report.id == report_id, Analysis.user_id == user_id,
+                                                            Analysis.deleted_at.is_(None))
 
         result = await self.session.execute(query)
 
@@ -30,7 +32,8 @@ class Analysis_Repository:
     async def get_analysis_by_youtube_video_id (self, youtube_video_id: str, user_id: str) -> str:
 
         query = (select(Analysis.youtube_video_id).filter(Analysis.youtube_video_id == youtube_video_id,
-                                                        Analysis.user_id == user_id, Analysis.status == "done"))
+                                                        Analysis.user_id == user_id, Analysis.status == "done",
+                                                        Analysis.deleted_at.is_(None)))
 
         result = await self.session.execute(query)
 
@@ -38,7 +41,9 @@ class Analysis_Repository:
     
     async def delete_analysis (self, analysis: Analysis) -> None:
 
-        await self.session.delete(analysis)
+        now = datetime.now(timezone.utc)
+
+        analysis.deleted_at = now
         await self.session.commit()
 
     async def update_analysis_done_by_id (self, analysis_id: UUID) -> None:

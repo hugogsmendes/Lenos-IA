@@ -281,3 +281,9 @@ class OauthUserTokens (BaseModel):
 
     access_token: str
     refresh_token: str
+class ReportQuotaResponse(BaseModel):
+
+    used: int
+    limit: int
+    remaining: int
+    comments_processed: int

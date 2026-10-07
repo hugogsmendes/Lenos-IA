@@ -5,7 +5,8 @@ from sqlalchemy import select, func, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from redis.asyncio import Redis
 from uuid import UUID
-
+from datetime import datetime, timezone
+from dateutil.relativedelta import relativedelta
 
 class Report_Repository:
 
@@ -22,15 +23,16 @@ class Report_Repository:
         await self.session.flush()
         return new_report
       
-    async def get_reports_by_user (self, user_id: str) -> tuple[UUID, str, str, str, str]:
+    async def get_reports_by_user (self, user_id: str):
 
         query = (
                 select(Report.id, Report.report_title, Analysis.video_url ,Report.report_markdown, Analysis.status, 
                        Report.processed_comments, Report.processed_comments_positive, Report.processed_comments_negative,
                        Report.created_at)
                  .join(Report.analysis)
-                 .filter(Analysis.user_id == user_id)
-                 )
+                 .filter(Analysis.user_id == user_id,
+                         Analysis.deleted_at.is_(None))
+                )
         
         result = await self.session.execute(query)
 
@@ -38,7 +40,7 @@ class Report_Repository:
     
     async def get_report_by_id (self, report_id: UUID) -> Report | None:
 
-        query = select(Report).filter(Report.id == report_id)
+        query = select(Report).join(Report.analysis).filter(Report.id == report_id, Analysis.deleted_at.is_(None))
 
         result = await self.session.execute(query)
 
@@ -71,10 +73,35 @@ class Report_Repository:
 
     async def report_done_count_by_user_id (self, user_id: str):
         
-        query = (select(func.count()).select_from(Report)
+        now = datetime.now(timezone.utc)
+
+        start_of_month = now.replace(
+            day = 1,
+            hour = 0,
+            minute = 0,
+            second = 0,
+            microsecond = 0,
+        )
+
+        start_of_next_month = start_of_month + relativedelta(months = 1)
+
+        query = (
+            select(
+                func.count(Report.id).label("reports_used"),
+                func.coalesce(
+                    func.sum(Report.processed_comments), 0
+                ).label("comments_processed"),
+            )
+            .select_from(Report)
             .join(Report.analysis)
-            .filter(Analysis.user_id == user_id, Analysis.status == "done"))
+            .filter(
+                Analysis.user_id == user_id,
+                Analysis.status == "done",
+                Report.created_at >= start_of_month,
+                Report.created_at < start_of_next_month,
+            )
+        )
 
         result = await self.session.execute(query)
 
-        return result.scalar()
+        return result.one()

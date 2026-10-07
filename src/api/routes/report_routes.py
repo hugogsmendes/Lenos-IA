@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, status, Request, BackgroundTasks
 from fastapi.responses import StreamingResponse
 from src.app.main import limiter
 from src.utils.dependencies import get_current_user
-from src.utils.schemas import GenerateReport, UpdatedReport, MessageError, RateLimitError, ResponseReportCreate, ResponseReport
+from src.utils.schemas import GenerateReport, UpdatedReport, MessageError, RateLimitError, ResponseReportCreate, ResponseReport, ReportQuotaResponse
 from src.service.report_service import Report_Service
 from src.utils.dependencies import get_report_service
 import io
@@ -68,6 +68,14 @@ delete_report_responses = {
     502: {"model": MessageError, "description": "Serviço indisponível"}
 }
 
+
+quota_reports_responses = {
+    200: {"model": ReportQuotaResponse, "description": "Cota retornada"},
+    403: {"model": MessageError, "description": "Sem permissão"},
+    429: {"model": RateLimitError, "description": "Limite de requisição"},
+    502: {"model": MessageError, "description": "Serviço indisponível"}
+}
+
 @report_router.post(path = "/generate-report", 
                     responses = generete_report_responses,
                     status_code = status.HTTP_201_CREATED)
@@ -119,3 +127,11 @@ async def update_report(request: Request, id: UUID, body: UpdatedReport, service
 @limiter.limit("10/minute")
 async def delete_report(request: Request, id: UUID, service: Report_Service = Depends(get_report_service), current_user: dict = Depends(get_current_user)):
     return await service.delete_report(id, current_user.get("id"))
+
+@report_router.get(path = "/reports/quota",
+                   responses = quota_reports_responses,
+                   status_code = status.HTTP_200_OK)
+@limiter.limit("10/minute")
+async def get_report_quota(request: Request, service: Report_Service = Depends(get_report_service), 
+                           current_user: dict = Depends(get_current_user)):
+    return await service.get_report_quota(current_user.get("id"))

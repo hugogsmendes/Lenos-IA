@@ -7,7 +7,7 @@ from src.repository.comment_repository import Comment_Repository
 from src.service.comment_service import Comment_Service
 from src.repository.report_repository import Report_Repository
 from src.service.oauth_service import Oauth_Service
-from src.utils.schemas import GenerateReport, UpdatedReport
+from src.utils.schemas import GenerateReport, UpdatedReport, ReportQuotaResponse
 from src.utils.exceptions import BadGateway, BadRequest, Forbidden
 from src.utils.processing import extract_youtube_video_id
 from src.utils.logging import get_logger
@@ -25,6 +25,7 @@ logger = get_logger("report_service")
 
 
 GEMINI_API_KEY = settings.GEMINI_API_KEY
+REPORT_MONTHLY_LIMIT = 5
 
 class Report_Service:
 
@@ -162,11 +163,11 @@ class Report_Service:
 
         try:
             logger.info("Starting report creation request for user %s, video_url %s", user_id, schema.video_url)
-            count = await self.repository.report_done_count_by_user_id(user_id)
+            stats = await self.repository.report_done_count_by_user_id(user_id)
 
-            if count >= 3:
+            if stats.reports_used >= 5:
                 logger.warning("Report creation rejected: limit reached for user %s", user_id)
-                raise BadRequest(detail = "Limite de 3 relatórios atingido")
+                raise BadRequest(detail = "Limite de 5 relatórios mensais atingido")
 
             youtube_video_id = extract_youtube_video_id(schema.video_url)
 
@@ -559,3 +560,21 @@ class Report_Service:
             render_table(table_data)
         
         return pdf.output()
+
+
+    async def get_report_quota(self, user_id: str) -> ReportQuotaResponse: # Colocar logs
+
+        try:
+
+            stats = await self.repository.report_done_count_by_user_id(user_id)
+            
+            return ReportQuotaResponse(
+                used = stats.reports_used,
+                limit = REPORT_MONTHLY_LIMIT,
+                remaining = max(REPORT_MONTHLY_LIMIT - stats.reports_used, 0),
+                comments_processed = stats.comments_processed)
+        
+        except HTTPException:
+            raise
+        except Exception:
+            raise BadGateway
