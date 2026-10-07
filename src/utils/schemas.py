@@ -287,3 +287,9 @@ class ReportQuotaResponse(BaseModel):
     limit: int
     remaining: int
     comments_processed: int
+
+class OauthStatusResponse(BaseModel):
+    
+    connected: bool
+    expired: bool
+    expires_at: datetime | None

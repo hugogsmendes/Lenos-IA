@@ -1,6 +1,7 @@
 from src.repository.oauth_repository import Oauth_Repository
 from src.utils.exceptions import BadGateway, BadRequest, NotFound
 from src.utils.logging import get_logger
+from src.utils.schemas import OauthStatusResponse
 from src.settings.config import settings
 from fastapi import HTTPException
 import httpx
@@ -36,7 +37,7 @@ class Oauth_Service:
                 raise BadRequest(detail = "Conta Youtube não conectada")
             
             logger.info("OAuth tokens retrieved successfully for user_id: %s", user_id)
-            return tokens[0], tokens[1]
+            return tokens.access_token, tokens.refresh_token
 
         except HTTPException:
             raise
@@ -178,18 +179,43 @@ class Oauth_Service:
 
         try:
             logger.info("Fetching stored YouTube channel id for user_id: %s", user_id)
-            channel_id = await self.repository.get_channel_id_by_user_id(user_id)
+            channel = await self.repository.get_channel_id_by_user_id(user_id)
 
-            if not channel_id:
+            if not channel:
                 logger.warning("No stored YouTube channel id found for user_id: %s", user_id)
                 raise NotFound(detail = "Canal não encontrado")
 
             logger.info("Stored YouTube channel id fetched successfully for user_id: %s", user_id)
-            return channel_id[0]
+            return channel.channel_id
 
         except HTTPException:
             raise
         except Exception as e:
             logger.error("Unexpected error fetching stored YouTube channel id for user_id %s: %s", user_id, str(e), exc_info=True)
+            raise BadGateway
+
+    async def get_oauth_status(self, user_id: str) -> OauthStatusResponse: # Colocar logs
+        try:
+
+            oauth = await self.repository.get_latest_oauth_by_user_id(user_id)
+
+            if not oauth:
+                return OauthStatusResponse(
+                    connected = False,
+                    expired = False,
+                    expires_at = None,
+                )
+
+            expired = oauth.refresh_token_expires_in <= datetime.now(timezone.utc)
+
+            return OauthStatusResponse(
+                connected = True,
+                expired = expired,
+                expires_at = oauth.refresh_token_expires_in,
+            )
+        
+        except HTTPException:
+            raise
+        except Exception:
             raise BadGateway
         

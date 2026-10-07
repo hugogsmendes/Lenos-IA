@@ -10,7 +10,9 @@ class Oauth_Repository:
 
     async def get_tokens_by_user_id (self, user_id: str) -> tuple | None:
 
-        query = select(Oauth.access_token, Oauth.refresh_token).filter(Oauth.user_id == user_id).order_by(Oauth.created_at.desc())
+        query = (select(Oauth.access_token.label("access_token"), Oauth.refresh_token.label("refresh_token"))
+                 .filter(Oauth.user_id == user_id)
+                 .order_by(Oauth.created_at.desc()))
 
         result = await self.session.execute(query)
 
@@ -24,8 +26,23 @@ class Oauth_Repository:
 
     async def get_channel_id_by_user_id (self, user_id: str) -> tuple | None:
 
-        query = select(Oauth.channel_id).filter(Oauth.user_id == user_id).order_by(Oauth.created_at.desc())
+        query = (select(Oauth.channel_id.label("channel_id"))
+                 .filter(Oauth.user_id == user_id)
+                 .order_by(Oauth.created_at.desc()))
 
         result = await self.session.execute(query)
 
         return result.first()
+
+    async def get_latest_oauth_by_user_id(self, user_id: str) -> Oauth | None:
+
+        query = (
+            select(Oauth)
+            .filter(Oauth.user_id == user_id)
+            .order_by(Oauth.created_at.desc())
+            .limit(1)
+        )
+
+        result = await self.session.execute(query)
+
+        return result.scalar_one_or_none()

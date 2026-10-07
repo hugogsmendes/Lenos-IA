@@ -4,7 +4,7 @@ from src.app.main import limiter
 from src.service.oauth_service import Oauth_Service
 from src.utils.dependencies import get_oauth_service, get_current_user
 from src.settings.config import settings
-from src.utils.schemas import MessageError, RateLimitError, UserMessage
+from src.utils.schemas import MessageError, RateLimitError, UserMessage, OauthStatusResponse
 
 
 AUTH_URI = settings.AUTH_URI
@@ -32,6 +32,13 @@ oauth_callback_responses = {
     502: {"model": MessageError, "description": "Serviço indisponível"}
 }
 
+oauth_status_responses = {
+    200: {"model": OauthStatusResponse, "description": "Status Oauth"},
+    403: {"model": MessageError, "description": "Sem permissão"},
+    429: {"model": RateLimitError, "description": "Limite de requisição"},
+    502: {"model": MessageError, "description": "Serviço indisponível"}
+}
+
 @oauth_router.get(path = "/login", 
                   responses = oauth_login_responses,
                   status_code = status.HTTP_307_TEMPORARY_REDIRECT)
@@ -49,3 +56,11 @@ async def ouath_callback (request: Request, code: str, service: Oauth_Service = 
     dash_url = f"{FRONT}/dashboard"
     return RedirectResponse(url = dash_url,
                             status_code = 303)
+
+@oauth_router.get(path = "/status", 
+                  responses = oauth_status_responses,
+                  status_code = status.HTTP_200_OK)
+@limiter.limit("10/minute")
+async def get_oauth_status (request: Request, service: Oauth_Service = Depends(get_oauth_service),
+                            current_user: dict = Depends(get_current_user)):
+    return await service.get_oauth_status(current_user.get("id"))
