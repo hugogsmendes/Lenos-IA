@@ -379,9 +379,9 @@ class Report_Service:
                 logger.info("Retrieved reports from cache for user %s", user_id)
                 return json.loads(reports_cache)
 
-            reports = await self.repository.get_reports_by_user(user_id)
+            reports, stats = await self.repository.get_reports_by_user(user_id)
 
-            result = [
+            result_reports = [
                 {
                     "id": report_id,
                     "title": title,
@@ -395,9 +395,20 @@ class Report_Service:
                 }
             for report_id, title, url, report, status, processed_comments, processed_comments_positive, processed_comments_negative, created_at in reports]
 
+            result = {
+                "result": result_reports,
+                "stats": {
+                        "report_count": stats.reports_count,
+                        "comments_processed": stats.comments_processed,
+                        "comments_positive": stats.comments_positive,
+                        "comments_negative": stats.comments_negative
+                    }
+            }
+
             await self.repository.cache.set(user_reports_key, json.dumps(result, default = str), ex = 3600)
 
             logger.info("Retrieved reports from database for user %s and updated cache", user_id)
+            
             return result
         
         except HTTPException:

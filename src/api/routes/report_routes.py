@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, status, Request, BackgroundTasks
 from fastapi.responses import StreamingResponse
 from src.app.main import limiter
 from src.utils.dependencies import get_current_user
-from src.utils.schemas import GenerateReport, UpdatedReport, MessageError, RateLimitError, ResponseReportCreate, ResponseReport, ReportQuotaResponse
+from src.utils.schemas import GenerateReport, UpdatedReport, MessageError, RateLimitError, ResponseReportCreate, ResponseReport, ReportQuotaResponse, ResponseReportStats
 from src.service.report_service import Report_Service
 from src.utils.dependencies import get_report_service
 import io
@@ -46,7 +46,7 @@ report_pdf_by_id_responses = {
 }
 
 list_reports_responses = {
-    200: {"model": list[ResponseReport], "description": "Relatórios listados"},
+    200: {"model": ResponseReportStats, "description": "Relatórios listados"},
     403: {"model": MessageError, "description": "Sem permissão"},
     429: {"model": RateLimitError, "description": "Limite de requisição"},
     502: {"model": MessageError, "description": "Serviço indisponível"}
@@ -67,7 +67,6 @@ delete_report_responses = {
     429: {"model": RateLimitError, "description": "Limite de requisição"},
     502: {"model": MessageError, "description": "Serviço indisponível"}
 }
-
 
 quota_reports_responses = {
     200: {"model": ReportQuotaResponse, "description": "Cota retornada"},

@@ -250,10 +250,22 @@ class ResponseReport (BaseModel):
     url: str
     report: str
     status: str
-    processed_comments: int
-    processed_comments_positive: int
-    processed_comments_negative: int
+    processed_comments: int | None
+    processed_comments_positive: int | None
+    processed_comments_negative: int | None
     created_at: datetime
+
+class ReportStats (BaseModel):
+
+    report_count: int
+    comments_processed: int
+    comments_positive: int
+    comments_negative: int
+
+class ResponseReportStats (BaseModel):
+
+    result: list[ResponseReport]
+    stats: ReportStats
 
 class MessageError (BaseModel):
 

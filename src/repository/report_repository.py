@@ -26,17 +26,40 @@ class Report_Repository:
     async def get_reports_by_user (self, user_id: str):
 
         query = (
-                select(Report.id, Report.report_title, Analysis.video_url ,Report.report_markdown, Analysis.status, 
-                       Report.processed_comments, Report.processed_comments_positive, Report.processed_comments_negative,
-                       Report.created_at)
-                 .join(Report.analysis)
-                 .filter(Analysis.user_id == user_id,
-                         Analysis.deleted_at.is_(None))
-                )
-        
-        result = await self.session.execute(query)
+            select(Report.id, Report.report_title, Analysis.video_url ,Report.report_markdown, Analysis.status, 
+                    Report.processed_comments, Report.processed_comments_positive, Report.processed_comments_negative,
+                    Report.created_at)
+            .join(Report.analysis)
+            .filter(
+                Analysis.user_id == user_id,
+                Analysis.deleted_at.is_(None))
+            )
 
-        return result.all()
+        stats_query = (
+            select(
+                func.count(Report.id).label("reports_count"),
+                func.coalesce(
+                    func.sum(Report.processed_comments), 0
+                ).label("comments_processed"),
+                func.coalesce(
+                    func.sum(Report.processed_comments_positive), 0
+                ).label("comments_positive"),
+                func.coalesce(
+                    func.sum(Report.processed_comments_negative), 0
+                ).label("comments_negative"),
+            )
+            .select_from(Report)
+            .join(Report.analysis)
+            .filter(
+                Analysis.user_id == user_id,
+                Analysis.deleted_at.is_(None),
+            )
+        )
+        
+        reports = await self.session.execute(query)
+        stats = await self.session.execute(stats_query)
+
+        return reports.all(), stats.one()
     
     async def get_report_by_id (self, report_id: UUID) -> Report | None:
 
