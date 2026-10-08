@@ -27,7 +27,7 @@ class Report_Repository:
 
         query = (
             select(Report.id, Report.report_title, Analysis.video_url ,Report.report_markdown, Analysis.status, 
-                    Report.processed_comments, Report.processed_comments_positive, Report.processed_comments_negative,
+                    Report.comments_processed, Report.comments_positive, Report.comments_negative,
                     Report.created_at)
             .join(Report.analysis)
             .filter(
@@ -39,13 +39,13 @@ class Report_Repository:
             select(
                 func.count(Report.id).label("reports_count"),
                 func.coalesce(
-                    func.sum(Report.processed_comments), 0
+                    func.sum(Report.comments_processed), 0
                 ).label("comments_processed"),
                 func.coalesce(
-                    func.sum(Report.processed_comments_positive), 0
+                    func.sum(Report.comments_positive), 0
                 ).label("comments_positive"),
                 func.coalesce(
-                    func.sum(Report.processed_comments_negative), 0
+                    func.sum(Report.comments_negative), 0
                 ).label("comments_negative"),
             )
             .select_from(Report)
@@ -76,15 +76,15 @@ class Report_Repository:
         await self.cache.delete(cache_key)
         await self.session.refresh(report)
 
-    async def update_report_done_by_id (self, report_id: UUID, prompt: str, title: str, markdown: str, processed_comments: int, 
-                                        processed_comments_positive: int, processed_comments_negative: int) -> None:
+    async def update_report_done_by_id (self, report_id: UUID, prompt: str, title: str, markdown: str, comments_processed: int, 
+                                        comments_positive: int, comments_negative: int) -> None:
 
         query = update(Report).filter(Report.id == report_id).values(prompt = prompt,
                                                                      report_title = title,
                                                                      report_markdown = markdown,
-                                                                     processed_comments = processed_comments,
-                                                                     processed_comments_positive = processed_comments_positive,
-                                                                     processed_comments_negative = processed_comments_negative)
+                                                                     comments_processed = comments_processed,
+                                                                     comments_positive = comments_positive,
+                                                                     comments_negative = comments_negative)
         await self.session.execute(query)
 
     async def update_report_failed_by_id (self, report_id: UUID) -> None:
@@ -112,7 +112,7 @@ class Report_Repository:
             select(
                 func.count(Report.id).label("reports_used"),
                 func.coalesce(
-                    func.sum(Report.processed_comments), 0
+                    func.sum(Report.comments_processed), 0
                 ).label("comments_processed"),
             )
             .select_from(Report)

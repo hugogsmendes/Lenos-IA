@@ -61,7 +61,7 @@ class Report_Service:
             Regras obrigatórias:
 
             * Retorne um JSON com as seguinte estrutura: 
-            {titulo: Título curto, criativo e chamativo, markdown: Relatório em markdown, processed_comments_positive: Quantidade de comentários positivo, processed_comments_negative: Quantidade de comentários negativo}
+            {titulo: Título curto, criativo e chamativo, markdown: Relatório em markdown, comments_positive: Quantidade de comentários positivo, comments_negative: Quantidade de comentários negativo}
 
             * O título não pode ter mais de 50 caracteres
             * Não utilize HTML
@@ -258,12 +258,12 @@ class Report_Service:
                     if not comments:
                         raise ValueError("No comments returned by YouTube")
 
-                    processed_comments = comment_service.processing_comments(comments)
+                    comments_processed = comment_service.processing_comments(comments)
 
-                    if not processed_comments:
+                    if not comments_processed:
                         raise ValueError("No valid comments found")
 
-                    report_dict = await self.analyze_comments(processed_comments)
+                    report_dict = await self.analyze_comments(comments_processed)
 
                     if not report_dict:
                         logger.error("Background Task: Gemini analysis failed for report %s", report_id)
@@ -271,12 +271,12 @@ class Report_Service:
 
                     title = report_dict.get("titulo")
                     markdown = report_dict.get("markdown")
-                    processed_comments_positive = report_dict.get("processed_comments_positive")
-                    processed_comments_negative = report_dict.get("processed_comments_negative")
+                    comments_positive = report_dict.get("comments_positive")
+                    comments_negative = report_dict.get("comments_negative")
 
                     await analysis_repository.update_analysis_done_by_id(analysis_id)
-                    await repository.update_report_done_by_id(report_id, self.prompt, title, markdown, len(processed_comments),
-                                                              processed_comments_positive, processed_comments_negative)
+                    await repository.update_report_done_by_id(report_id, self.prompt, title, markdown, len(comments_processed),
+                                                              comments_positive, comments_negative)
                     await session.commit()
                     logger.info("Background Task: Report %s successfully generated and saved", report_id)
 
@@ -356,9 +356,9 @@ class Report_Service:
                 "url": report.analysis.video_url,
                 "report": report.report_markdown,
                 "status": report.analysis.status,
-                "processed_comments": report.processed_comments,
-                "processed_comments_positive": report.processed_comments_positive,
-                "processed_comments_negative": report.processed_comments_negative,
+                "comments_processed": report.comments_processed,
+                "comments_positive": report.comments_positive,
+                "comments_negative": report.comments_negative,
                 "created_at": report.created_at
             }
         
@@ -383,17 +383,17 @@ class Report_Service:
 
             result_reports = [
                 {
-                    "id": report_id,
-                    "title": title,
+                    "id": id,
+                    "title": report_title,
                     "url": url,
-                    "report": report,
+                    "report": report_markdown,
                     "status": status,
-                    "processed_comments": processed_comments,
-                    "processed_comments_positive": processed_comments_positive,
-                    "processed_comments_negative": processed_comments_negative,
+                    "comments_processed": comments_processed,
+                    "comments_positive": comments_positive,
+                    "comments_negative": comments_negative,
                     "created_at": created_at
                 }
-            for report_id, title, url, report, status, processed_comments, processed_comments_positive, processed_comments_negative, created_at in reports]
+            for id, report_title, url, report_markdown, status, comments_processed, comments_positive, comments_negative, created_at in reports]
 
             result = {
                 "result": result_reports,

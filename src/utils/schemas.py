@@ -250,9 +250,9 @@ class ResponseReport (BaseModel):
     url: str
     report: str
     status: str
-    processed_comments: int | None
-    processed_comments_positive: int | None
-    processed_comments_negative: int | None
+    comments_processed: int | None
+    comments_positive: int | None
+    comments_negative: int | None
     created_at: datetime
 
 class ReportStats (BaseModel):

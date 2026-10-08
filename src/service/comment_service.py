@@ -120,7 +120,7 @@ class Comment_Service:
             logger.info("Processing comments (cleaning emojis and whitespace)")
             items = comments.get("items", []) if isinstance(comments, dict) else comments
 
-            processed_comments = []
+            comments_processed = []
 
             for item in items:
                 snippet = item.get("snippet", {})
@@ -131,10 +131,10 @@ class Comment_Service:
                 cleaned_text = self._clean_comment_text(text)
 
                 if cleaned_text:
-                    processed_comments.append(cleaned_text)
+                    comments_processed.append(cleaned_text)
 
-            logger.info("Processed %s comments successfully", len(processed_comments))
-            return processed_comments
+            logger.info("Processed %s comments successfully", len(comments_processed))
+            return comments_processed
 
         except Exception as e:
             logger.error("Unexpected error in background task processing comments: %s", str(e), exc_info=True)

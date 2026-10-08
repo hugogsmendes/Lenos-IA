@@ -18,11 +18,9 @@ class Report (Base):
     prompt: Mapped[str] = mapped_column(String, nullable = True)
     report_markdown: Mapped[str] = mapped_column(String, nullable = True)
     report_title: Mapped[str] = mapped_column(String, nullable = True)
-    input_tokens: Mapped[int] = mapped_column(Integer, nullable = True)
-    output_tokens: Mapped[int] = mapped_column(Integer, nullable = True)
-    processed_comments: Mapped[int] = mapped_column(Integer, nullable = True)
-    processed_comments_positive: Mapped[int] = mapped_column(Integer, nullable = True)
-    processed_comments_negative: Mapped[int] = mapped_column(Integer, nullable = True)
+    comments_processed: Mapped[int] = mapped_column(Integer, nullable = True)
+    comments_positive: Mapped[int] = mapped_column(Integer, nullable = True)
+    comments_negative: Mapped[int] = mapped_column(Integer, nullable = True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone = True), server_default = func.now(), nullable = False)
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone = True),
