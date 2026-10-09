@@ -49,6 +49,7 @@ report_pdf_by_id_responses = {
 
 list_reports_responses = {
     200: {"model": ResponseReportStats, "description": "Relatórios listados"},
+    400: {"model": MessageError, "description": "Intervalo de datas inválido"},
     403: {"model": MessageError, "description": "Sem permissão"},
     429: {"model": RateLimitError, "description": "Limite de requisição"},
     502: {"model": MessageError, "description": "Serviço indisponível"}

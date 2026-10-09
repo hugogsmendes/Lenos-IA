@@ -258,7 +258,7 @@ class ResponseReport (BaseModel):
 
 class ReportStats (BaseModel):
 
-    report_count: int
+    count: int
     comments_processed: int
     comments_positive: int
     comments_negative: int

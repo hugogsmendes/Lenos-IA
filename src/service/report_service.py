@@ -372,6 +372,12 @@ class Report_Service:
     async def get_reports_stats_by_user_id (self, user_id: str, status: StatusReport | None, start_date: date, end_date: date):
 
         try:
+            if start_date > end_date:
+                raise BadRequest(detail = "Intervalo de datas inválido")
+            
+            if (end_date - start_date).days > 45:
+                raise BadRequest(detail = "Limite de intervalo inválido")
+
             user_reports_key = f"{self.repository.cache_key}_{user_id}_{status}_{start_date}_{end_date}"
 
             reports_cache = await self.repository.cache.get(user_reports_key)
@@ -400,7 +406,7 @@ class Report_Service:
             result = {
                 "result": result_reports,
                 "stats": {
-                        "report_count": stats.reports_count,
+                        "count": stats.reports_count,
                         "comments_processed": stats.comments_processed,
                         "comments_positive": stats.comments_positive,
                         "comments_negative": stats.comments_negative
