@@ -1,11 +1,11 @@
 from src.models.reports import Report
 from src.models.analyses import Analysis
-from src.utils.schemas import UpdatedReport
-from sqlalchemy import select, func, update
+from src.utils.schemas import UpdatedReport, StatusReport
+from sqlalchemy import select, func, update, cast, Date
 from sqlalchemy.ext.asyncio import AsyncSession
 from redis.asyncio import Redis
 from uuid import UUID
-from datetime import datetime, timezone
+from datetime import datetime, timezone, date
 from dateutil.relativedelta import relativedelta
 
 class Report_Repository:
@@ -23,7 +23,7 @@ class Report_Repository:
         await self.session.flush()
         return new_report
       
-    async def get_reports_by_user (self, user_id: str):
+    async def get_reports_by_user_id (self, user_id: str, status: StatusReport | None, start_date: date, end_date: date):
 
         query = (
             select(Report.id, Report.report_title, Analysis.video_url ,Report.report_markdown, Analysis.status, 
@@ -32,10 +32,22 @@ class Report_Repository:
             .join(Report.analysis)
             .filter(
                 Analysis.user_id == user_id,
-                Analysis.deleted_at.is_(None))
+                Analysis.deleted_at.is_(None),
+                cast(Report.created_at, Date) >= start_date,
+                cast(Report.created_at, Date) <= end_date
             )
+        )
 
-        stats_query = (
+        if status is not None:
+            query = query.filter(Analysis.status == status)
+
+        result = await self.session.execute(query)
+
+        return result.all()
+
+    async def get_stats_by_user_id (self, user_id: str, status: StatusReport | None, start_date: date, end_date: date):
+
+        query = (
             select(
                 func.count(Report.id).label("reports_count"),
                 func.coalesce(
@@ -53,13 +65,17 @@ class Report_Repository:
             .filter(
                 Analysis.user_id == user_id,
                 Analysis.deleted_at.is_(None),
+                cast(Report.created_at, Date) >= start_date,
+                cast(Report.created_at, Date) <= end_date
             )
         )
-        
-        reports = await self.session.execute(query)
-        stats = await self.session.execute(stats_query)
 
-        return reports.all(), stats.one()
+        if status is not None:
+            query = query.filter(Analysis.status == status)
+
+        result = await self.session.execute(query)
+
+        return result.one()
     
     async def get_report_by_id (self, report_id: UUID) -> Report | None:
 

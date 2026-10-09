@@ -1,12 +1,14 @@
-from fastapi import APIRouter, Depends, status, Request, BackgroundTasks
+from fastapi import APIRouter, Depends, status, Request, BackgroundTasks, Query
+from typing import Optional
 from fastapi.responses import StreamingResponse
 from src.app.main import limiter
 from src.utils.dependencies import get_current_user
-from src.utils.schemas import GenerateReport, UpdatedReport, MessageError, RateLimitError, ResponseReportCreate, ResponseReport, ReportQuotaResponse, ResponseReportStats
+from src.utils.schemas import GenerateReport, UpdatedReport, MessageError, RateLimitError, ResponseReportCreate, ResponseReport, ReportQuotaResponse, ResponseReportStats, StatusReport
 from src.service.report_service import Report_Service
 from src.utils.dependencies import get_report_service
 import io
 from uuid import UUID
+from datetime import date
 
 report_router = APIRouter(prefix = "/v1/user", tags = ["report"])
 
@@ -110,8 +112,13 @@ async def get_report_pdf_by_id (request: Request, id: UUID,
                    responses = list_reports_responses,
                    status_code = status.HTTP_200_OK)
 @limiter.limit("10/minute")
-async def get_reports_by_user (request: Request, service: Report_Service = Depends(get_report_service), current_user: dict = Depends(get_current_user)):
-    return await service.get_reports_by_user(current_user.get("id"))
+async def get_reports_stats_by_user_id (request: Request, 
+                                     status: Optional[StatusReport] = Query(None, description = "Filtre por status"),
+                                     start_date: date = Query(..., description = "Data de início (YYYY-MM-DD)"),
+                                     end_date: date = Query(..., description = "Data de início (YYYY-MM-DD)"),
+                                     service: Report_Service = Depends(get_report_service), 
+                                     current_user: dict = Depends(get_current_user)):
+    return await service.get_reports_stats_by_user_id(current_user.get("id"), status, start_date, end_date)
 
 @report_router.put(path = "/report/{id}",
                    responses = update_report_responses,

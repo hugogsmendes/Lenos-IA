@@ -7,7 +7,7 @@ from src.repository.comment_repository import Comment_Repository
 from src.service.comment_service import Comment_Service
 from src.repository.report_repository import Report_Repository
 from src.service.oauth_service import Oauth_Service
-from src.utils.schemas import GenerateReport, UpdatedReport, ReportQuotaResponse
+from src.utils.schemas import GenerateReport, UpdatedReport, ReportQuotaResponse, StatusReport
 from src.utils.exceptions import BadGateway, BadRequest, Forbidden
 from src.utils.processing import extract_youtube_video_id
 from src.utils.logging import get_logger
@@ -20,6 +20,7 @@ from fpdf import FPDF
 import json
 import re
 import asyncio
+from datetime import date
 
 logger = get_logger("report_service")
 
@@ -368,10 +369,10 @@ class Report_Service:
             logger.error("Unexpected error retrieving report_id %s: %s", report_id, str(e), exc_info=True)
             raise BadGateway
     
-    async def get_reports_by_user (self, user_id: str):
+    async def get_reports_stats_by_user_id (self, user_id: str, status: StatusReport | None, start_date: date, end_date: date):
 
         try:
-            user_reports_key = f"{self.repository.cache_key}_{user_id}"
+            user_reports_key = f"{self.repository.cache_key}_{user_id}_{status}_{start_date}_{end_date}"
 
             reports_cache = await self.repository.cache.get(user_reports_key)
 
@@ -379,8 +380,9 @@ class Report_Service:
                 logger.info("Retrieved reports from cache for user %s", user_id)
                 return json.loads(reports_cache)
 
-            reports, stats = await self.repository.get_reports_by_user(user_id)
-
+            reports = await self.repository.get_reports_by_user_id(user_id, status, start_date, end_date)
+            stats = await self.repository.get_stats_by_user_id(user_id, status, start_date, end_date)
+            
             result_reports = [
                 {
                     "id": id,

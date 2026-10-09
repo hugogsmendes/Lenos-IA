@@ -2,6 +2,7 @@ from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
 import re
 from datetime import datetime
 from uuid import UUID
+from enum import Enum
 
 MAX_NAME_LENGTH = 50
 MAX_EMAIL_LENGTH = 200
@@ -267,6 +268,11 @@ class ResponseReportStats (BaseModel):
     result: list[ResponseReport]
     stats: ReportStats
 
+class StatusReport (str, Enum):
+
+    done = "done"
+    pending = "pending"
+    failed = "failed"
 class MessageError (BaseModel):
 
     detail: str
