@@ -581,19 +581,30 @@ class Report_Service:
         return pdf.output()
 
 
-    async def get_report_quota(self, user_id: str) -> ReportQuotaResponse: # Colocar logs
+    async def get_report_quota(self, user_id: str) -> ReportQuotaResponse:
 
         try:
+            logger.info("Fetching report quota for user %s", user_id)
 
             stats = await self.repository.report_done_count_by_user_id(user_id)
+            remaining = max(REPORT_MONTHLY_LIMIT - stats.reports_used, 0)
+
+            logger.info(
+                "Report quota retrieved for user %s: used=%s, remaining=%s, comments_processed=%s",
+                user_id,
+                stats.reports_used,
+                remaining,
+                stats.comments_processed
+            )
             
             return ReportQuotaResponse(
                 used = stats.reports_used,
                 limit = REPORT_MONTHLY_LIMIT,
-                remaining = max(REPORT_MONTHLY_LIMIT - stats.reports_used, 0),
+                remaining = remaining,
                 comments_processed = stats.comments_processed)
         
         except HTTPException:
             raise
-        except Exception:
+        except Exception as e:
+            logger.error("Unexpected error fetching report quota for user %s: %s", user_id, str(e), exc_info=True)
             raise BadGateway

@@ -194,12 +194,14 @@ class Oauth_Service:
             logger.error("Unexpected error fetching stored YouTube channel id for user_id %s: %s", user_id, str(e), exc_info=True)
             raise BadGateway
 
-    async def get_oauth_status(self, user_id: str) -> OauthStatusResponse: # Colocar logs
+    async def get_oauth_status(self, user_id: str) -> OauthStatusResponse:
         try:
+            logger.info("Fetching OAuth connection status for user_id: %s", user_id)
 
             oauth = await self.repository.get_latest_oauth_by_user_id(user_id)
 
             if not oauth:
+                logger.info("No OAuth connection found for user_id: %s", user_id)
                 return OauthStatusResponse(
                     connected = False,
                     expired = False,
@@ -207,6 +209,7 @@ class Oauth_Service:
                 )
 
             expired = oauth.refresh_token_expires_in <= datetime.now(timezone.utc)
+            logger.info("OAuth connection status retrieved for user_id: %s, expired: %s", user_id, expired)
 
             return OauthStatusResponse(
                 connected = True,
@@ -216,6 +219,7 @@ class Oauth_Service:
         
         except HTTPException:
             raise
-        except Exception:
+        except Exception as e:
+            logger.error("Unexpected error fetching OAuth connection status for user_id %s: %s", user_id, str(e), exc_info=True)
             raise BadGateway
         

@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, status, Response, Request, BackgroundTasks
 from src.utils.schemas import (ResponseUser, RegisterUser, LoginUser, UpdateUser, UpdatePasswordUser, 
-                           ForgotPassword, ResetPassword, MessageError, RateLimitError, UserMessage, UserMe)
+                           ForgotPassword, ResetPassword, MessageError, RateLimitError, UserMessage, UserMe, UpdateEmailUser)
 from src.app.main import limiter
 from src.service.user_service import User_Service
 from src.utils.dependencies import get_user_service, get_current_user, get_current_user_adm
@@ -82,6 +82,23 @@ user_forgot_password_responses = {
 user_reset_password_responses = {
     200: {"model": UserMessage, "description": "Senha redefinida"},
     400: {"model": MessageError, "description": "Token inválido"},
+    404: {"model": MessageError, "description": "Usuário não encontrado"},
+    429: {"model": RateLimitError, "description": "Limite de requisição"},
+    502: {"model": MessageError, "description": "Serviço indisponível"}
+}
+
+user_update_email_responses = {
+    200: {"model": UserMessage, "description": "Email enviado"},
+    403: {"model": MessageError, "description": "Sem permissão"},
+    404: {"model": MessageError, "description": "Usuário não encontrado"},
+    429: {"model": RateLimitError, "description": "Limite de requisição"},
+    502: {"model": MessageError, "description": "Serviço indisponível"}
+}
+
+user_confirm_email_responses = {
+    200: {"model": UserMessage, "description": "Email confirmado e alterado"},
+    400: {"model": MessageError, "description": "Token inválido"},
+    403: {"model": MessageError, "description": "Sem permissão"},
     404: {"model": MessageError, "description": "Usuário não encontrado"},
     429: {"model": RateLimitError, "description": "Limite de requisição"},
     502: {"model": MessageError, "description": "Serviço indisponível"}
@@ -193,3 +210,25 @@ async def reset_password (request: Request, token: str, body: ResetPassword, ser
     await service.reset_password(token, body)
 
     return {"message": "Senha redefinida com sucesso"}
+
+@user_router.post(path = "/email",
+                 responses = user_update_email_responses,
+                 status_code = status.HTTP_200_OK)
+@limiter.limit("5/minute")
+async def update_email (request: Request, body: UpdateEmailUser, service: User_Service = Depends(get_user_service),
+                        current_user: dict = Depends(get_current_user)):
+    
+    await service.update_email(body, current_user.get("email"))
+    return {"message": "Email para confirmar o novo email enviado"}
+
+@user_router.post(path = "/confirm-email", 
+                  responses = user_confirm_email_responses,
+                  status_code = status.HTTP_200_OK)
+@limiter.limit("5/minute")
+async def confirm_email (request: Request, response: Response, token: str, service: User_Service = Depends(get_user_service),
+                         current_user: dict = Depends(get_current_user)):
+
+    await service.confirm_email(token, current_user.get("email"))
+    clear_tokens_cookies(response)
+    return {"message": "Email confirmado e alterado com sucesso"}
+

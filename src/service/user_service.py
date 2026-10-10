@@ -1,6 +1,6 @@
 from src.repository.user_repository import User_Repository
 from src.service.email_service import Email_Service
-from src.utils.schemas import RegisterUser, LoginUser, UpdateUser, UpdatePasswordUser, ForgotPassword, ResetPassword
+from src.utils.schemas import RegisterUser, LoginUser, UpdateUser, UpdatePasswordUser, ForgotPassword, ResetPassword, UpdateEmailUser
 from src.utils.exceptions import Conflict, BadRequest, NotFound, Unauthorized, BadGateway
 from src.utils.security import verify_password, create_email_verification_token, create_password_reset_token, create_access_token, create_refresh_token, verify_token_jwt
 from src.utils.logging import get_logger
@@ -105,13 +105,6 @@ class User_Service:
                 logger.warning("User update failed: user %s not found", email)
                 raise NotFound(register = email)
 
-            if schema.email != user.email:
-                exists_user = await self.repository.get_user_by_email(schema.email)
-
-                if exists_user:
-                    logger.warning("User update failed: new email %s already registered", schema.email)
-                    raise Conflict(register = schema.email)
-        
             update_user = await self.repository.update_user(schema, user)
 
             access_token = create_access_token(update_user.id, update_user.name, update_user.email, update_user.phone, update_user.role)
@@ -245,4 +238,55 @@ class User_Service:
             logger.error("Unexpected error during reset password: %s", str(e), exc_info=True)
             raise BadGateway
 
+
+    async def update_email (self, schema: UpdateEmailUser, email: str):
+
+        try:
+            logger.info("Starting email update request from %s to %s", email, schema.new_email)
+
+            user = await self.repository.get_user_by_email(email)
+
+            if not user:
+                logger.warning("Email update failed: user %s not found", email)
+                raise NotFound(register = schema.email)
+            
+            email_verification_token = create_email_verification_token(schema.new_email)
+
+            await asyncio.to_thread(self.email_service.send_verification_update_email, schema.new_email, email_verification_token)
+            return None
+                
+        except HTTPException:
+            raise
+        except Exception as e:
+            logger.error("Unexpected error requesting email update from %s to %s: %s", email, schema.new_email, str(e), exc_info=True)
+            raise BadGateway
+
+    async def confirm_email (self, token: str, email: str):
+
+        try:
+            logger.info("Confirming email update for user %s", email)
+
+            payload = verify_token_jwt(token, "email_verification")
+
+            if not payload:
+                logger.warning("Email update confirmation failed: invalid token for user %s", email)
+                raise BadRequest
+
+            new_email = payload.get("email")
+
+            user = await self.repository.get_user_by_email(email)
+
+            if not user:
+                logger.warning("Email update confirmation failed: user %s not found", email)
+                raise NotFound(register = email)
+            
+            await self.repository.update_email_confirm(user, new_email)
+            logger.info("Email updated successfully from %s to %s", email, new_email)
+            return None
+                
+        except HTTPException:
+            raise
+        except Exception as e:
+            logger.error("Unexpected error confirming email update for user %s: %s", email, str(e), exc_info=True)
+            raise BadGateway
 

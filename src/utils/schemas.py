@@ -79,7 +79,6 @@ class UpdateUser (BaseModel):
     model_config = ConfigDict(from_attributes = True, str_strip_whitespace = True)
 
     name: str | None = Field(default = None, min_length = 3, max_length = MAX_NAME_LENGTH)
-    email: EmailStr | None = None
     phone: str | None = Field(default = None, min_length = MIN_PHONE_LENGTH, max_length = MAX_PHONE_LENGTH)
 
     @field_validator("name")
@@ -103,6 +102,12 @@ class UpdateUser (BaseModel):
             raise ValueError("Telefone deve conter apenas numeros e opcional '+' no inicio.")
 
         return value
+
+class UpdateEmailUser (BaseModel):
+
+    model_config = ConfigDict(from_attributes = True)
+
+    new_email: EmailStr
 
 class UpdatePasswordUser (BaseModel):
 
@@ -279,7 +284,7 @@ class MessageError (BaseModel):
 
 class RateLimitError (BaseModel):
 
-    erro: str
+    error: str
 
 class UserMessage (BaseModel):
 

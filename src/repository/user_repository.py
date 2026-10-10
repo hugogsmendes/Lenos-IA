@@ -61,3 +61,8 @@ class User_Repository:
         await self.session.commit()
         await self.session.refresh(user)
 
+    async def update_email_confirm (self, user: User, new_email: str):
+
+        user.email = new_email
+        await self.session.commit()
+        await self.session.refresh(user)
