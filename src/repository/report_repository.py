@@ -115,7 +115,12 @@ class Report_Repository:
 
         query = update(Report).filter(Report.id == report_id).values(prompt = "failed",
                                                                      title = "failed",
-                                                                     markdown = "failed")
+                                                                     markdown = "failed",
+                                                                     comments_processed = 0,
+                                                                     comments_positive = 0,
+                                                                     comments_negative = 0,
+                                                                     recurring_themes = [],
+                                                                     recommendations = [])
         await self.session.execute(query)
 
     async def report_done_count_by_user_id (self, user_id: str):
