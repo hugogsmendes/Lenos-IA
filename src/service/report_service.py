@@ -69,25 +69,25 @@ Caso a quantidade de comentários seja pequena, reduza o nível de confiança da
 - A soma dos percentuais de sentimento deve ser aproximadamente 100.
 - Não invente dados, temas, comentários ou informações que não estejam fundamentados nos comentários fornecidos.
 - Caso não existam informações suficientes para determinada análise, utilize uma lista vazia ou informe a limitação no relatório.
-- Os campos `temas_recorrentes` e `recomendacoes_estrategicas` devem estar sempre presentes no JSON, mesmo quando seus valores forem listas vazias.
+- Os campos `recurring_themes` e `recommendations` devem estar sempre presentes no JSON, mesmo quando seus valores forem listas vazias.
 
 ## Estrutura obrigatória do JSON
 
 Retorne exatamente os seguintes campos:
 
 {
-  "titulo": "Título curto, criativo e chamativo",
+  "title": "Título curto, criativo e chamativo",
   "markdown": "Relatório completo em Markdown",
-  "comentarios_positvos": 0,
-  "comentarios_negativos": 0,
-  "temas_recorrentes": [
+  "comments_positive": 0,
+  "comments_negative": 0,
+  "recurring_themes": [
     {
       "theme": "Nome do tema",
       "description": "Descrição breve do assunto discutido",
       "percentage_relevance": 0
     }
   ],
-  "recomendacoes_estrategicas": [
+  "recommendations": [
     {
       "recommendation": "Ação prática recomendada para o canal",
       "justification": "Justificativa baseada nos comentários analisados"
@@ -97,27 +97,27 @@ Retorne exatamente os seguintes campos:
 
 ## Regras para os campos principais
 
-### titulo
+### title
 Crie um título curto, criativo e chamativo, com no máximo 50 caracteres.
 
 ### markdown
 Gere o relatório completo em Markdown seguindo a estrutura abaixo.
 
-### comentarios_positvos
+### comments_positive
 Informe a quantidade de comentários classificados como positivos.
 
-### comentarios_negativos
+### comments_negative
 Informe a quantidade de comentários classificados como negativos.
 
 Classifique os comentários com critérios consistentes. Comentários neutros ou sem sentimento claro não devem ser contabilizados como positivos ou negativos.
 
 ## Regras para temas recorrentes
 
-O campo `temas_recorrentes` será utilizado para preencher o card "Temas Mais Recorrentes nos Comentários".
+O campo `recurring_themes` será utilizado para preencher o card "Temas Mais Recorrentes nos Comentários".
 
 - Identifique de 3 a 5 temas recorrentes, quando houver dados suficientes.
 - Ordene os temas do mais relevante para o menos relevante.
-- Cada tema deve conter `tema`, `descricao` e `relevancia_percentual`.
+- Cada tema deve conter `theme`, `description` e `percentage_relevance`.
 - A relevância percentual representa uma estimativa da proporção de comentários relacionados ao tema.
 - Um comentário pode abordar mais de um tema, portanto os percentuais não precisam somar 100%.
 - Utilize somente temas identificáveis nos comentários fornecidos.
@@ -126,7 +126,7 @@ O campo `temas_recorrentes` será utilizado para preencher o card "Temas Mais Re
 
 ## Regras para recomendações estratégicas
 
-O campo `recomendacoes_estrategicas` será utilizado para preencher o card "Recomendações Estratégicas para seu Canal".
+O campo `recommendations` será utilizado para preencher o card "Recomendações Estratégicas para seu Canal".
 
 - Gere de 3 a 5 recomendações práticas, quando houver informações suficientes.
 - Cada recomendação deve conter uma ação concreta e sua justificativa.
@@ -308,12 +308,12 @@ Apresente uma conclusão sobre a recepção do vídeo e o comportamento da audi�
                     logger.error("Background Task: Gemini analysis failed for report %s", report_id)
                     raise RuntimeError("Gemini analysis returned no data")
 
-                title = report_dict.get("titulo")
+                title = report_dict.get("title")
                 markdown = report_dict.get("markdown")
-                comments_positive = report_dict.get("comentarios_positvos")
-                comments_negative = report_dict.get("comentarios_negativos")
-                recurring_themes = report_dict.get("temas_recorrentes")
-                recommendations = report_dict.get("recomendacoes_estrategicas")
+                comments_positive = report_dict.get("comments_positive")
+                comments_negative = report_dict.get("comments_negative")
+                recurring_themes = report_dict.get("recurring_themes")
+                recommendations = report_dict.get("recommendations")
 
                 await analysis_repository.update_analysis_done_by_id(analysis_id)
                 await repository.update_report_done_by_id(report_id, self.prompt, title, markdown, len(comments_processed),
