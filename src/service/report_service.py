@@ -82,15 +82,15 @@ Retorne exatamente os seguintes campos:
   "comentarios_negativos": 0,
   "temas_recorrentes": [
     {
-      "tema": "Nome do tema",
-      "descricao": "Descrição breve do assunto discutido",
-      "relevancia_percentual": 0
+      "theme": "Nome do tema",
+      "description": "Descrição breve do assunto discutido",
+      "percentage_relevance": 0
     }
   ],
   "recomendacoes_estrategicas": [
     {
-      "recomendacao": "Ação prática recomendada para o canal",
-      "justificativa": "Justificativa baseada nos comentários analisados"
+      "recommendation": "Ação prática recomendada para o canal",
+      "justification": "Justificativa baseada nos comentários analisados"
     }
   ]
 }

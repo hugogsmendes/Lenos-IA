@@ -248,7 +248,16 @@ class ResponseReportCreate (BaseModel):
 
     report_id: UUID
     status: str
+class RecurringThemes (BaseModel):
 
+    theme: str
+    description: str
+    percentage_relevance: int
+
+class Recommendations (BaseModel):
+
+    recommendation: str
+    justification: str
 class ResponseReport (BaseModel):
 
     id: UUID
@@ -259,6 +268,8 @@ class ResponseReport (BaseModel):
     comments_processed: int | None
     comments_positive: int | None
     comments_negative: int | None
+    recurring_themes: list[RecurringThemes]
+    recommendations: list[Recommendations]
     created_at: datetime
 
 class ReportStats (BaseModel):
