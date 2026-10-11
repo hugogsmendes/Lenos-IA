@@ -2,7 +2,7 @@ from src.database.postgres_client import Base
 from typing import TYPE_CHECKING
 from datetime import datetime
 from sqlalchemy import DateTime, String, func, ForeignKey, Integer
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.dialects.postgresql import UUID, JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 import uuid
 
@@ -18,6 +18,8 @@ class Report (Base):
     prompt: Mapped[str] = mapped_column(String, nullable = True)
     markdown: Mapped[str] = mapped_column(String, nullable = True)
     title: Mapped[str] = mapped_column(String, nullable = True)
+    recurring_themes: Mapped[list | None] = mapped_column(JSONB, nullable = True)
+    recommendations: Mapped[list | None] = mapped_column(JSONB, nullable = True)
     comments_processed: Mapped[int] = mapped_column(Integer, nullable = True)
     comments_positive: Mapped[int] = mapped_column(Integer, nullable = True)
     comments_negative: Mapped[int] = mapped_column(Integer, nullable = True)

@@ -28,7 +28,7 @@ class Report_Repository:
         query = (
             select(Report.id, Report.title, Analysis.video_url, Report.markdown, Analysis.status, 
                     Report.comments_processed, Report.comments_positive, Report.comments_negative,
-                    Report.created_at)
+                    Report.recurring_themes, Report.recommendations, Report.created_at)
             .join(Report.analysis)
             .filter(
                 Analysis.user_id == user_id,
@@ -98,14 +98,17 @@ class Report_Repository:
         await self.session.refresh(report)
 
     async def update_report_done_by_id (self, report_id: UUID, prompt: str, title: str, markdown: str, comments_processed: int, 
-                                        comments_positive: int, comments_negative: int) -> None:
+                                        comments_positive: int, comments_negative: int,
+                                        recurring_themes: list | None, recommendations: list | None) -> None:
 
         query = update(Report).filter(Report.id == report_id).values(prompt = prompt,
                                                                      title = title,
                                                                      markdown = markdown,
                                                                      comments_processed = comments_processed,
                                                                      comments_positive = comments_positive,
-                                                                     comments_negative = comments_negative)
+                                                                     comments_negative = comments_negative,
+                                                                     recurring_themes = recurring_themes,
+                                                                     recommendations = recommendations)
         await self.session.execute(query)
 
     async def update_report_failed_by_id (self, report_id: UUID) -> None:

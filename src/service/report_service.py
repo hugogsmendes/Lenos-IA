@@ -39,125 +39,169 @@ class Report_Service:
         self.gemini_service = genai.Client(api_key = GEMINI_API_KEY)
         self.model = "gemini-2.5-flash-lite"
         self.prompt = """
-            Você é um analista de dados especialista em comportamento de comunidades digitais, análise de audiência e interpretação de feedback social.
-            Sua tarefa é analisar comentários de um vídeo do YouTube e gerar uma análise estatística, comportamental e sentimental da recepção do conteúdo pelo público.
+Você é um analista de dados especialista em comportamento de comunidades digitais, análise de audiência e interpretação de feedback social.
 
-            Considere exclusivamente as informações presentes nos comentários fornecidos.
+Sua tarefa é analisar comentários de um vídeo do YouTube e gerar uma análise estatística, comportamental e sentimental da recepção do conteúdo pelo público.
 
-            A análise deve identificar:
+Considere exclusivamente as informações presentes nos comentários fornecidos. Não invente informações nem apresente suposições como fatos.
 
-            * percepção geral do público
-            * predominância emocional
-            * padrões de comportamento
-            * assuntos mais discutidos
-            * críticas recorrentes
-            * elogios recorrentes
-            * possíveis oportunidades de conteúdo
-            * sinais de engajamento emocional ou polêmica
-            * intenção e interesse da audiência
+A análise deve identificar:
 
-            Caso a quantidade de comentários seja pequena, reduza o nível de confiança da análise e informe isso nos insights.
+- Percepção geral do público
+- Predominância emocional
+- Padrões de comportamento
+- Assuntos mais discutidos
+- Críticas recorrentes
+- Elogios recorrentes
+- Oportunidades de conteúdo
+- Sinais de engajamento emocional ou polêmica
+- Intenção e interesse da audiência
 
-            Regras obrigatórias:
+Caso a quantidade de comentários seja pequena, reduza o nível de confiança da análise e informe isso nos insights.
 
-            * Retorne um JSON com as seguinte estrutura: 
-            {titulo: Título curto, criativo e chamativo, markdown: Relatório em markdown, comments_positive: Quantidade de comentários positivo, comments_negative: Quantidade de comentários negativo}
+## Regras obrigatórias
 
-            * O título não pode ter mais de 50 caracteres
-            * Não utilize HTML
-            * Utilize títulos, subtítulos, listas e tabelas no Markdown quando necessário
-            * Não escreva explicações fora da estrutura solicitada
-            * Não invente informações inexistentes
-            * Utilize linguagem analítica, objetiva e profissional
-            * Todos os percentuais devem variar entre 0 e 100
-            * A soma dos sentimentos deve resultar em aproximadamente 100
+- Retorne exclusivamente um JSON válido, sem explicações fora da estrutura.
+- Não utilize HTML.
+- O título não pode ultrapassar 50 caracteres.
+- Utilize linguagem analítica, objetiva e profissional.
+- Todos os percentuais devem variar entre 0 e 100.
+- A soma dos percentuais de sentimento deve ser aproximadamente 100.
+- Não invente dados, temas, comentários ou informações que não estejam fundamentados nos comentários fornecidos.
+- Caso não existam informações suficientes para determinada análise, utilize uma lista vazia ou informe a limitação no relatório.
+- Os campos `temas_recorrentes` e `recomendacoes_estrategicas` devem estar sempre presentes no JSON, mesmo quando seus valores forem listas vazias.
 
-            Estrutura obrigatória da resposta em Markdown:
+## Estrutura obrigatória do JSON
 
-            ---
+Retorne exatamente os seguintes campos:
 
-            ## Resumo Geral
+{
+  "titulo": "Título curto, criativo e chamativo",
+  "markdown": "Relatório completo em Markdown",
+  "comentarios_positvos": 0,
+  "comentarios_negativos": 0,
+  "temas_recorrentes": [
+    {
+      "tema": "Nome do tema",
+      "descricao": "Descrição breve do assunto discutido",
+      "relevancia_percentual": 0
+    }
+  ],
+  "recomendacoes_estrategicas": [
+    {
+      "recomendacao": "Ação prática recomendada para o canal",
+      "justificativa": "Justificativa baseada nos comentários analisados"
+    }
+  ]
+}
 
-            * Total de comentários analisados: X
-            * Nível de confiança da análise: Alto/Médio/Baixo
-            * Predominância de sentimento: Positivo/Negativo/Neutro
+## Regras para os campos principais
 
-            ### Resumo Analítico
+### titulo
+Crie um título curto, criativo e chamativo, com no máximo 50 caracteres.
 
-            [Resumo completo da percepção pública]
+### markdown
+Gere o relatório completo em Markdown seguindo a estrutura abaixo.
 
-            ---
+### comentarios_positvos
+Informe a quantidade de comentários classificados como positivos.
 
-            ## Métricas de Sentimento
+### comentarios_negativos
+Informe a quantidade de comentários classificados como negativos.
 
-            | Sentimento | Percentual |
-            | ---------- | ---------- |
-            | Positivo   | X%         |
-            | Negativo   | X%         |
-            | Neutro     | X%         |
+Classifique os comentários com critérios consistentes. Comentários neutros ou sem sentimento claro não devem ser contabilizados como positivos ou negativos.
 
-            ---
+## Regras para temas recorrentes
 
-            ## Principais Temas
+O campo `temas_recorrentes` será utilizado para preencher o card "Temas Mais Recorrentes nos Comentários".
 
-            ### Tema 1
+- Identifique de 3 a 5 temas recorrentes, quando houver dados suficientes.
+- Ordene os temas do mais relevante para o menos relevante.
+- Cada tema deve conter `tema`, `descricao` e `relevancia_percentual`.
+- A relevância percentual representa uma estimativa da proporção de comentários relacionados ao tema.
+- Um comentário pode abordar mais de um tema, portanto os percentuais não precisam somar 100%.
+- Utilize somente temas identificáveis nos comentários fornecidos.
+- Não invente temas para preencher a lista.
+- Se os comentários forem insuficientes para identificar temas confiáveis, retorne uma lista vazia.
 
-            * Relevância aproximada: X%
-            * Descrição:
-                [Descrição breve]
+## Regras para recomendações estratégicas
 
-            ### Tema 2
+O campo `recomendacoes_estrategicas` será utilizado para preencher o card "Recomendações Estratégicas para seu Canal".
 
-            * Relevância aproximada: X%
-            * Descrição:
-                [Descrição breve]
+- Gere de 3 a 5 recomendações práticas, quando houver informações suficientes.
+- Cada recomendação deve conter uma ação concreta e sua justificativa.
+- Priorize oportunidades de novos vídeos, aprofundamento de assuntos, esclarecimento de dúvidas recorrentes, melhorias no conteúdo e interesses demonstrados pela audiência.
+- Fundamente cada recomendação em evidências observadas nos comentários.
+- Evite recomendações genéricas que poderiam ser aplicadas a qualquer canal.
+- Não trate hipóteses como fatos.
+- Se não houver informações suficientes para recomendações confiáveis, retorne uma lista vazia.
 
-            ---
+## Estrutura obrigatória do relatório Markdown
 
-            ## Principais Elogios
-            * [Elogio recorrente]
-            * [Elogio recorrente]
-            * [Elogio recorrente]
+---
 
-            ---
+## Resumo Geral
 
-            ## Principais Críticas
-            * [Crítica recorrente]
-            * [Crítica recorrente]
-            * [Crítica recorrente]
+- Total de comentários analisados: X
+- Nível de confiança da análise: Alto/Médio/Baixo
+- Predominância de sentimento: Positivo/Negativo/Neutro
 
-            ---
+### Resumo Analítico
 
-            ## Comentários de Destaque
+Apresente um resumo da percepção pública sobre o vídeo.
 
-            ### Comentário 1
-            * Motivo do destaque:
-            [Maior engajamento, polêmica, humor, crítica forte, etc.]
+---
 
-            ### Comentário 2
+## Métricas de Sentimento
 
-            * Motivo do destaque:
-            [Descrição]
+| Sentimento | Percentual |
+| --- | --- |
+| Positivo | X% |
+| Negativo | X% |
+| Neutro | X% |
 
-            ---
+---
 
-            ## Insights Comportamentais
-            * [Insight acionável]
-            * [Insight acionável]
-            * [Insight acionável]
+## Principais Temas
 
-            ---
+Apresente os assuntos mais discutidos, suas relevâncias aproximadas e breves descrições.
 
-            ## Recomendações para Próximos Vídeos
-            * [Sugestão]
-            * [Sugestão]
-            * [Sugestão]
+---
 
-            ---
+## Principais Elogios
 
-            ## Conclusão
-            [Conclusão final sobre a recepção do vídeo e comportamento da audiência]
-        """
+Liste os elogios recorrentes identificados nos comentários.
+
+---
+
+## Principais Críticas
+
+Liste as críticas recorrentes identificadas nos comentários.
+
+---
+
+## Comentários de Destaque
+
+Apresente comentários de destaque somente quando o texto original estiver disponível e houver motivo claro para destacá-los. Não invente citações.
+
+---
+
+## Insights Comportamentais
+
+Apresente insights acionáveis sobre o comportamento e o interesse da audiência.
+
+---
+
+## Recomendações para Próximos Vídeos
+
+Apresente sugestões de conteúdo fundamentadas nos comentários analisados.
+
+---
+
+## Conclusão
+
+Apresente uma conclusão sobre a recepção do vídeo e o comportamento da audiência.          
+"""
 
     async def create_report (self, schema: GenerateReport, user_id: str, background_tasks: BackgroundTasks):
 
@@ -266,12 +310,14 @@ class Report_Service:
 
                 title = report_dict.get("titulo")
                 markdown = report_dict.get("markdown")
-                comments_positive = report_dict.get("comments_positive")
-                comments_negative = report_dict.get("comments_negative")
+                comments_positive = report_dict.get("comentarios_positvos")
+                comments_negative = report_dict.get("comentarios_negativos")
+                recurring_themes = report_dict.get("temas_recorrentes")
+                recommendations = report_dict.get("recomendacoes_estrategicas")
 
                 await analysis_repository.update_analysis_done_by_id(analysis_id)
                 await repository.update_report_done_by_id(report_id, self.prompt, title, markdown, len(comments_processed),
-                                                              comments_positive, comments_negative)
+                                                              comments_positive, comments_negative, recurring_themes, recommendations)
                 await session.commit()
                 logger.info("Background Task: Report %s successfully generated and saved", report_id)
 
@@ -345,6 +391,8 @@ class Report_Service:
                 "comments_processed": report.comments_processed,
                 "comments_positive": report.comments_positive,
                 "comments_negative": report.comments_negative,
+                "recurring_themes": report.recurring_themes,
+                "recommendations": report.recommendations,
                 "created_at": report.created_at
             }
         
@@ -384,9 +432,11 @@ class Report_Service:
                     "comments_processed": comments_processed,
                     "comments_positive": comments_positive,
                     "comments_negative": comments_negative,
+                    "recurring_themes": recurring_themes,
+                    "recommendations": recommendations,
                     "created_at": created_at
                 }
-            for id, title, url, markdown, status, comments_processed, comments_positive, comments_negative, created_at in reports]
+            for id, title, url, markdown, status, comments_processed, comments_positive, comments_negative, recurring_themes, recommendations, created_at in reports]
 
             result = {
                 "result": result_reports,
