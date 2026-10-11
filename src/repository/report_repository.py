@@ -26,7 +26,7 @@ class Report_Repository:
     async def get_reports_by_user_id (self, user_id: str, status: StatusReport | None, start_date: date, end_date: date):
 
         query = (
-            select(Report.id, Report.report_title, Analysis.video_url ,Report.report_markdown, Analysis.status, 
+            select(Report.id, Report.title, Analysis.video_url, Report.markdown, Analysis.status, 
                     Report.comments_processed, Report.comments_positive, Report.comments_negative,
                     Report.created_at)
             .join(Report.analysis)
@@ -87,7 +87,7 @@ class Report_Repository:
     
     async def update_report (self, schema: UpdatedReport, report: Report, cache_key: str) -> None:
         
-        report.report_title = schema.new_title
+        report.title = schema.new_title
         await self.session.commit()
         await self.cache.delete(cache_key)
         await self.session.refresh(report)
@@ -96,8 +96,8 @@ class Report_Repository:
                                         comments_positive: int, comments_negative: int) -> None:
 
         query = update(Report).filter(Report.id == report_id).values(prompt = prompt,
-                                                                     report_title = title,
-                                                                     report_markdown = markdown,
+                                                                     title = title,
+                                                                     markdown = markdown,
                                                                      comments_processed = comments_processed,
                                                                      comments_positive = comments_positive,
                                                                      comments_negative = comments_negative)
@@ -106,8 +106,8 @@ class Report_Repository:
     async def update_report_failed_by_id (self, report_id: UUID) -> None:
 
         query = update(Report).filter(Report.id == report_id).values(prompt = "failed",
-                                                                     report_title = "failed",
-                                                                     report_markdown = "failed")
+                                                                     title = "failed",
+                                                                     markdown = "failed")
         await self.session.execute(query)
 
     async def report_done_count_by_user_id (self, user_id: str):

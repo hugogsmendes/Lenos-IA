@@ -353,9 +353,9 @@ class Report_Service:
 
             return {
                 "id": report.id,
-                "title": report.report_title,
+                "title": report.title,
                 "url": report.analysis.video_url,
-                "report": report.report_markdown,
+                "report": report.markdown,
                 "status": report.analysis.status,
                 "comments_processed": report.comments_processed,
                 "comments_positive": report.comments_positive,
@@ -392,16 +392,16 @@ class Report_Service:
             result_reports = [
                 {
                     "id": id,
-                    "title": report_title,
+                    "title": title,
                     "url": url,
-                    "report": report_markdown,
+                    "report": markdown,
                     "status": status,
                     "comments_processed": comments_processed,
                     "comments_positive": comments_positive,
                     "comments_negative": comments_negative,
                     "created_at": created_at
                 }
-            for id, report_title, url, report_markdown, status, comments_processed, comments_positive, comments_negative, created_at in reports]
+            for id, title, url, markdown, status, comments_processed, comments_positive, comments_negative, created_at in reports]
 
             result = {
                 "result": result_reports,
@@ -492,12 +492,12 @@ class Report_Service:
             if not text: return ""
             return text.replace("•", "-").replace("—", "-").replace("–", "-")
 
-        if report.report_title:
+        if report.title:
             pdf.set_font("Helvetica", "B", 22)
-            pdf.multi_cell(0, 12, s(report.report_title), align='C')
+            pdf.multi_cell(0, 12, s(report.title), align='C')
             pdf.ln(10)
 
-        lines = report.report_markdown.split("\n") if report.report_markdown else []
+        lines = report.markdown.split("\n") if report.markdown else []
         table_data = []
 
         def render_table(data):
