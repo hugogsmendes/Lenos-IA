@@ -36,7 +36,7 @@ class Comment_Service:
     def __init__(self, repository: Comment_Repository):
         self.repository = repository
 
-    async def get_channel_id_by_video_id (self, youtube_service, video_id: str):
+    async def get_channel_id_title_by_video_id (self, youtube_service, video_id: str):
 
         try:
             logger.info("Verifying existence of video_id %s on YouTube", video_id)
@@ -54,11 +54,12 @@ class Comment_Service:
             items = response.get("items", [])
             snippet = items[0]["snippet"]
             channel_id = snippet["channelId"]
+            title = snippet["title"]
 
             logger.info("Video ID %s verified successfully", video_id)
             logger.info("Channel ID %s returned for video_id %s", channel_id, video_id)
 
-            return channel_id
+            return channel_id, title
         
         except HttpError as error:
             status_code = error.resp.status

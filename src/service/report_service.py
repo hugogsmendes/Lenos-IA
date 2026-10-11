@@ -63,7 +63,6 @@ Caso a quantidade de comentários seja pequena, reduza o nível de confiança da
 
 - Retorne exclusivamente um JSON válido, sem explicações fora da estrutura.
 - Não utilize HTML.
-- O título não pode ultrapassar 50 caracteres.
 - Utilize linguagem analítica, objetiva e profissional.
 - Todos os percentuais devem variar entre 0 e 100.
 - A soma dos percentuais de sentimento deve ser aproximadamente 100.
@@ -76,7 +75,6 @@ Caso a quantidade de comentários seja pequena, reduza o nível de confiança da
 Retorne exatamente os seguintes campos:
 
 {
-  "title": "Título curto, criativo e chamativo",
   "markdown": "Relatório completo em Markdown",
   "comments_positive": 0,
   "comments_negative": 0,
@@ -96,9 +94,6 @@ Retorne exatamente os seguintes campos:
 }
 
 ## Regras para os campos principais
-
-### title
-Crie um título curto, criativo e chamativo, com no máximo 50 caracteres.
 
 ### markdown
 Gere o relatório completo em Markdown seguindo a estrutura abaixo.
@@ -228,7 +223,7 @@ Apresente uma conclusão sobre a recepção do vídeo e o comportamento da audi�
             access_token, refresh_token = await self.oauth_service.get_tokens_by_user_id(user_id)
             youtube_service = self.oauth_service.get_youtube_service(access_token, refresh_token)
 
-            channel_id_by_video = await self.comment_service.get_channel_id_by_video_id(youtube_service, youtube_video_id)
+            channel_id_by_video, title = await self.comment_service.get_channel_id_title_by_video_id(youtube_service, youtube_video_id)
             channel_id_by_user = await self.oauth_service.get_channel_id_by_user_id(user_id)
             logger.info(
                 "Comparing YouTube channel ids for user %s: video_channel_id = %s, user_channel_id = %s",
@@ -268,7 +263,7 @@ Apresente uma conclusão sobre a recepção do vídeo e o comportamento da audi�
             except Exception as e:
                 logger.warning("Failed to invalidate report cache for user %s: %s", user_id, str(e), exc_info=True)
 
-            background_tasks.add_task(self.generate_report, youtube_video_id, new_report.id, new_analysis.id, youtube_service)
+            background_tasks.add_task(self.generate_report, youtube_video_id, new_report.id, new_analysis.id, youtube_service, title)
 
             logger.info("Report creation background task started: report_id %s, video_id %s", new_report.id, youtube_video_id)
             return {
@@ -282,7 +277,7 @@ Apresente uma conclusão sobre a recepção do vídeo e o comportamento da audi�
             logger.error("Unexpected error starting report creation for user %s: %s", user_id, str(e), exc_info=True)
             raise BadGateway
         
-    async def generate_report (self, video_id: str, report_id: UUID, analysis_id: UUID, youtube_service):
+    async def generate_report (self, video_id: str, report_id: UUID, analysis_id: UUID, youtube_service, title: str):
 
         async with SessionLocal() as session:
             repository = Report_Repository(session)
@@ -308,7 +303,6 @@ Apresente uma conclusão sobre a recepção do vídeo e o comportamento da audi�
                     logger.error("Background Task: Gemini analysis failed for report %s", report_id)
                     raise RuntimeError("Gemini analysis returned no data")
 
-                title = report_dict.get("title")
                 markdown = report_dict.get("markdown")
                 comments_positive = report_dict.get("comments_positive")
                 comments_negative = report_dict.get("comments_negative")
