@@ -10,7 +10,7 @@ from dateutil.relativedelta import relativedelta
 
 class Report_Repository:
 
-    def __init__(self, session: AsyncSession, cache: Redis):
+    def __init__(self, session: AsyncSession, cache: Redis | None = None):
         self.session = session
         self.cache = cache
         self.cache_key = "reports"
@@ -89,7 +89,12 @@ class Report_Repository:
         
         report.title = schema.new_title
         await self.session.commit()
-        await self.cache.delete(cache_key)
+
+        keys = await self.cache.keys(f"{cache_key}*")
+
+        if keys:
+            await self.cache.delete(*keys)
+            
         await self.session.refresh(report)
 
     async def update_report_done_by_id (self, report_id: UUID, prompt: str, title: str, markdown: str, comments_processed: int, 

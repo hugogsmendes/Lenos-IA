@@ -1,5 +1,4 @@
 from src.database.postgres_client import SessionLocal
-from src.database.redis_client import get_redis
 from src.models.reports import Report
 from src.repository.analysis_repository import Analysis_Repository
 from src.service.analysis_service import Analysis_Service
@@ -218,12 +217,14 @@ class Report_Service:
                 raise
 
             try:
-                await self.repository.cache.delete(user_reports_key)
-                logger.info("Report cache invalidated for user %s after report creation", user_id)
+                keys = await self.repository.cache.keys(f"{user_reports_key}*")
+                if keys:
+                    await self.repository.cache.delete(*keys)
+                    logger.info("Report cache invalidated for user %s after report creation", user_id)
             except Exception as e:
                 logger.warning("Failed to invalidate report cache for user %s: %s", user_id, str(e), exc_info=True)
 
-            background_tasks.add_task(self.generate_report, youtube_video_id, new_report.id, new_analysis.id, user_reports_key, youtube_service)
+            background_tasks.add_task(self.generate_report, youtube_video_id, new_report.id, new_analysis.id, youtube_service)
 
             logger.info("Report creation background task started: report_id %s, video_id %s", new_report.id, youtube_video_id)
             return {
@@ -237,82 +238,66 @@ class Report_Service:
             logger.error("Unexpected error starting report creation for user %s: %s", user_id, str(e), exc_info=True)
             raise BadGateway
         
-    async def generate_report (self, video_id: str, report_id: UUID, analysis_id: UUID, user_reports_key: str, youtube_service):
+    async def generate_report (self, video_id: str, report_id: UUID, analysis_id: UUID, youtube_service):
 
-        redis_client = None
-        try:
+        async with SessionLocal() as session:
+            repository = Report_Repository(session)
+            analysis_repository = Analysis_Repository(session)
+            comment_repository = Comment_Repository(session)
+            comment_service = Comment_Service(comment_repository)
+
             try:
-                redis_client = await get_redis()
-            except Exception as e:
-                logger.warning("Background Task: Redis unavailable for report %s: %s", report_id, str(e), exc_info=True)
+                logger.info("Background Task: Generating report %s for video_id %s", report_id, video_id)
+                comments = await comment_service.get_comments_by_video_id(youtube_service, video_id)
 
-            async with SessionLocal() as session:
-                repository = Report_Repository(session, redis_client)
-                analysis_repository = Analysis_Repository(session)
-                comment_repository = Comment_Repository(session)
-                comment_service = Comment_Service(comment_repository)
+                if not comments:
+                    raise ValueError("No comments returned by YouTube")
 
-                try:
-                    logger.info("Background Task: Generating report %s for video_id %s", report_id, video_id)
-                    comments = await comment_service.get_comments_by_video_id(youtube_service, video_id)
+                comments_processed = comment_service.processing_comments(comments)
 
-                    if not comments:
-                        raise ValueError("No comments returned by YouTube")
+                if not comments_processed:
+                    raise ValueError("No valid comments found")
 
-                    comments_processed = comment_service.processing_comments(comments)
+                report_dict = await self.analyze_comments(comments_processed)
 
-                    if not comments_processed:
-                        raise ValueError("No valid comments found")
+                if not report_dict:
+                    logger.error("Background Task: Gemini analysis failed for report %s", report_id)
+                    raise RuntimeError("Gemini analysis returned no data")
 
-                    report_dict = await self.analyze_comments(comments_processed)
+                title = report_dict.get("titulo")
+                markdown = report_dict.get("markdown")
+                comments_positive = report_dict.get("comments_positive")
+                comments_negative = report_dict.get("comments_negative")
 
-                    if not report_dict:
-                        logger.error("Background Task: Gemini analysis failed for report %s", report_id)
-                        raise RuntimeError("Gemini analysis returned no data")
-
-                    title = report_dict.get("titulo")
-                    markdown = report_dict.get("markdown")
-                    comments_positive = report_dict.get("comments_positive")
-                    comments_negative = report_dict.get("comments_negative")
-
-                    await analysis_repository.update_analysis_done_by_id(analysis_id)
-                    await repository.update_report_done_by_id(report_id, self.prompt, title, markdown, len(comments_processed),
+                await analysis_repository.update_analysis_done_by_id(analysis_id)
+                await repository.update_report_done_by_id(report_id, self.prompt, title, markdown, len(comments_processed),
                                                               comments_positive, comments_negative)
+                await session.commit()
+                logger.info("Background Task: Report %s successfully generated and saved", report_id)
+
+            except ValueError as e:
+                logger.warning("Background Task: Report %s generation rejected: %s", report_id, str(e))
+                await session.rollback()
+                try:
+                    await analysis_repository.update_analysis_failed_by_id(analysis_id)
+                    await repository.update_report_failed_by_id(report_id)
                     await session.commit()
-                    logger.info("Background Task: Report %s successfully generated and saved", report_id)
+                    logger.info("Background Task: Report ID %s marked as failed", report_id)
+                except Exception:
+                    logger.error("Background Task: Failed to persist failure state for report_id %s", report_id, exc_info=True)
+                return
 
-                    try:
-                        await self.repository.cache.delete(user_reports_key)
-                        logger.info("Background Task: Cache invalidated for report %s", report_id)
-                    except Exception as e:
-                        logger.warning("Background Task: Failed to invalidate cache for report %s: %s", report_id, str(e), exc_info=True)
-
-                except ValueError as e:
-                    logger.warning("Background Task: Report %s generation rejected: %s", report_id, str(e))
-                    await session.rollback()
-                    try:
-                        await analysis_repository.update_analysis_failed_by_id(analysis_id)
-                        await repository.update_report_failed_by_id(report_id)
-                        await session.commit()
-                        logger.info("Background Task: Report ID %s marked as failed", report_id)
-                    except Exception:
-                        logger.error("Background Task: Failed to persist failure state for report_id %s", report_id, exc_info=True)
-                    return
-
-                except Exception as e:
-                    logger.error("Background Task: Unexpected error generating report_id %s: %s", report_id, str(e), exc_info=True)
-                    await session.rollback()
-                    try:
-                        await analysis_repository.update_analysis_failed_by_id(analysis_id)
-                        await repository.update_report_failed_by_id(report_id)
-                        await session.commit()
-                        logger.info("Background Task: Report %s marked as failed", report_id)
-                    except Exception:
-                        logger.error("Background Task: Failed to persist failure state for report_id %s", report_id, exc_info=True)
-                    return
-        finally:
-            if redis_client is not None:
-                await redis_client.aclose()
+            except Exception as e:
+                logger.error("Background Task: Unexpected error generating report_id %s: %s", report_id, str(e), exc_info=True)
+                await session.rollback()
+                try:
+                    await analysis_repository.update_analysis_failed_by_id(analysis_id)
+                    await repository.update_report_failed_by_id(report_id)
+                    await session.commit()
+                    logger.info("Background Task: Report %s marked as failed", report_id)
+                except Exception:
+                    logger.error("Background Task: Failed to persist failure state for report_id %s", report_id, exc_info=True)
+                return
         
     async def analyze_comments (self, comments: list) -> dict:
 
@@ -451,7 +436,10 @@ class Report_Service:
 
             await self.analysis_service.delete_analysis(report_id, user_id)
 
-            await self.repository.cache.delete(user_reports_key)
+            keys = await self.repository.cache.keys(f"{user_reports_key}*")
+
+            if keys:
+                await self.repository.cache.delete(*keys)
 
             logger.info("Report ID %s and associated analysis deleted successfully for user %s", report_id, user_id)
             return None
