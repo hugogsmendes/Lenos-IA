@@ -157,12 +157,6 @@ Apresente um resumo da percepção pública sobre o vídeo.
 
 ---
 
-## Principais Temas
-
-Apresente os assuntos mais discutidos, suas relevâncias aproximadas e breves descrições.
-
----
-
 ## Principais Elogios
 
 Liste os elogios recorrentes identificados nos comentários.
@@ -184,12 +178,6 @@ Apresente comentários de destaque somente quando o texto original estiver dispo
 ## Insights Comportamentais
 
 Apresente insights acionáveis sobre o comportamento e o interesse da audiência.
-
----
-
-## Recomendações para Próximos Vídeos
-
-Apresente sugestões de conteúdo fundamentadas nos comentários analisados.
 
 ---
 
@@ -519,64 +507,88 @@ Apresente uma conclusão sobre a recepção do vídeo e o comportamento da audi�
         pdf = FPDF()
         pdf.add_page()
         pdf.set_auto_page_break(auto = True, margin = 15)
+        self._render_pdf_title(pdf, report.title)
+        self._render_pdf_markdown(pdf, report.markdown)
+        self._render_pdf_recurring_themes(pdf, report.recurring_themes)
+        self._render_pdf_recommendations(pdf, report.recommendations)
         
-        def s(text):
-            if not text: return ""
-            return text.replace("•", "-").replace("—", "-").replace("–", "-")
+        return pdf.output()
 
-        if report.title:
-            pdf.set_font("Helvetica", "B", 22)
-            pdf.multi_cell(0, 12, s(report.title), align='C')
-            pdf.ln(10)
+    @staticmethod
+    def _sanitize_pdf_text(text) -> str:
+        if not text:
+            return ""
 
-        lines = report.markdown.split("\n") if report.markdown else []
+        return str(text).replace("•", "-").replace("—", "-").replace("–", "-")
+
+    @staticmethod
+    def _parse_json_list(value) -> list:
+        if isinstance(value, list):
+            return value
+
+        if isinstance(value, str):
+            try:
+                parsed_value = json.loads(value)
+                return parsed_value if isinstance(parsed_value, list) else []
+            except json.JSONDecodeError:
+                return []
+
+        return []
+
+    def _render_pdf_title(self, pdf: FPDF, title: str | None) -> None:
+        if not title:
+            return
+
+        pdf.set_font("Helvetica", "B", 22)
+        pdf.multi_cell(0, 12, self._sanitize_pdf_text(title), align="C")
+        pdf.ln(10)
+
+    def _render_pdf_table(self, pdf: FPDF, data: list[list]) -> None:
+        clean_data = []
+        for row in data:
+            normalized_row = [str(cell).strip() for cell in row]
+            is_separator = all(re.match(r"^[\s\-:]+$", cell) for cell in normalized_row)
+            if not is_separator:
+                clean_data.append(normalized_row)
+
+        if not clean_data:
+            return
+
+        pdf.set_font("Helvetica", "B", 10)
+        with pdf.table(
+            borders_layout="HORIZONTAL_LINES",
+            cell_fill_color=245,
+            cell_fill_mode="ROWS",
+            line_height=8,
+            text_align="CENTER"
+        ) as table:
+            for index, data_row in enumerate(clean_data):
+                row = table.row()
+                if index == 0:
+                    pdf.set_font("Helvetica", "B", 10)
+                else:
+                    pdf.set_font("Helvetica", size=10)
+
+                for cell in data_row:
+                    row.cell(self._sanitize_pdf_text(cell))
+        pdf.ln(5)
+
+    def _render_pdf_markdown(self, pdf: FPDF, markdown: str | None) -> None:
         table_data = []
 
-        def render_table(data):
-            if not data: return
-            
-            clean_data = []
-            for row in data:
-                is_separator = all(re.match(r"^[\s\-:]+$", cell) for cell in row)
-                if not is_separator:
-                    clean_data.append(row)
-            
-            if not clean_data: return
-
-            pdf.set_font("Helvetica", "B", 10)
-            with pdf.table(
-                borders_layout="HORIZONTAL_LINES",
-                cell_fill_color=245,
-                cell_fill_mode="ROWS",
-                line_height=8,
-                text_align="CENTER"
-            ) as table:
-                for i, data_row in enumerate(clean_data):
-                    row = table.row()
-                    if i == 0:
-                        pdf.set_font("Helvetica", "B", 10)
-                    else:
-                        pdf.set_font("Helvetica", size=10)
-                        
-                    for cell in data_row:
-                    
-                        row.cell(s(cell.strip()))
-            pdf.ln(5)
-
         pdf.set_font("Helvetica", size=11)
-
-        for line in lines:
+        for line in markdown.split("\n") if markdown else []:
             line_strip = line.strip()
-            
+
             if line_strip.startswith("|") and line_strip.endswith("|"):
-                parts = [p.strip() for p in line_strip.split("|")][1:-1]
+                parts = [part.strip() for part in line_strip.split("|")][1:-1]
                 if parts:
                     table_data.append(parts)
                 continue
-            else:
-                if table_data:
-                    render_table(table_data)
-                    table_data = []
+
+            if table_data:
+                self._render_pdf_table(pdf, table_data)
+                table_data = []
 
             if not line_strip:
                 pdf.ln(3)
@@ -586,31 +598,79 @@ Apresente uma conclusão sobre a recepção do vídeo e o comportamento da audi�
 
             if line_strip.startswith("# "):
                 pdf.set_font("Helvetica", "B", 18)
-                pdf.multi_cell(0, 10, s(line_strip[2:]), markdown=True)
+                pdf.multi_cell(0, 10, self._sanitize_pdf_text(line_strip[2:]), markdown=True)
                 pdf.ln(4)
             elif line_strip.startswith("## "):
                 pdf.set_font("Helvetica", "B", 15)
-                pdf.multi_cell(0, 10, s(line_strip[3:]), markdown=True)
+                pdf.multi_cell(0, 10, self._sanitize_pdf_text(line_strip[3:]), markdown=True)
                 pdf.ln(3)
             elif line_strip.startswith("### "):
                 pdf.set_font("Helvetica", "B", 13)
-                pdf.multi_cell(0, 8, s(line_strip[4:]), markdown=True)
+                pdf.multi_cell(0, 8, self._sanitize_pdf_text(line_strip[4:]), markdown=True)
                 pdf.ln(2)
             elif line_strip.startswith("* ") or line_strip.startswith("- "):
                 pdf.set_font("Helvetica", size=11)
-                pdf.multi_cell(0, 7, f"  - {s(line_strip[2:])}", markdown=True)
+                pdf.multi_cell(0, 7, f"  - {self._sanitize_pdf_text(line_strip[2:])}", markdown=True)
             elif line_strip.startswith("---"):
                 pdf.ln(2)
                 pdf.line(pdf.l_margin, pdf.get_y(), pdf.w - pdf.r_margin, pdf.get_y())
                 pdf.ln(4)
             else:
                 pdf.set_font("Helvetica", size=11)
-                pdf.multi_cell(0, 7, s(line_strip), markdown=True)
+                pdf.multi_cell(0, 7, self._sanitize_pdf_text(line_strip), markdown=True)
 
         if table_data:
-            render_table(table_data)
-        
-        return pdf.output()
+            self._render_pdf_table(pdf, table_data)
+
+    def _render_pdf_recurring_themes(self, pdf: FPDF, themes_data) -> None:
+        recurring_themes = self._parse_json_list(themes_data)
+        theme_rows = [
+            [
+                theme.get("theme") or "Nao informado",
+                theme.get("description") or "Nao informada",
+                f"{theme.get('percentage_relevance') or 0}%"
+            ]
+            for theme in recurring_themes
+            if isinstance(theme, dict)
+        ]
+
+        if not theme_rows:
+            return
+
+        pdf.ln(4)
+        pdf.set_font("Helvetica", "B", 15)
+        pdf.set_x(pdf.l_margin)
+        pdf.multi_cell(0, 10, "Temas Recorrentes")
+        self._render_pdf_table(pdf, [["Tema", "Descricao", "Relevancia"], *theme_rows])
+
+    def _render_pdf_recommendations(self, pdf: FPDF, recommendations_data) -> None:
+        recommendations = self._parse_json_list(recommendations_data)
+        valid_recommendations = [
+            recommendation
+            for recommendation in recommendations
+            if isinstance(recommendation, dict)
+        ]
+
+        if not valid_recommendations:
+            return
+
+        pdf.ln(4)
+        pdf.set_font("Helvetica", "B", 15)
+        pdf.set_x(pdf.l_margin)
+        pdf.multi_cell(0, 10, "Recomendações")
+        pdf.ln(2)
+
+        for recommendation in valid_recommendations:
+            recommendation_text = recommendation.get("recommendation") or "Nao informada"
+            justification = recommendation.get("justification") or "Nao informada"
+
+            pdf.set_font("Helvetica", "B", 11)
+            pdf.set_x(pdf.l_margin)
+            pdf.multi_cell(0, 7, f"- {self._sanitize_pdf_text(recommendation_text)}")
+            pdf.set_font("Helvetica", size=11)
+            pdf.set_x(pdf.l_margin)
+            pdf.multi_cell(0, 7, f"Justificativa: {self._sanitize_pdf_text(justification)}")
+            pdf.ln(3)
 
 
     async def get_report_quota(self, user_id: str) -> ReportQuotaResponse:
