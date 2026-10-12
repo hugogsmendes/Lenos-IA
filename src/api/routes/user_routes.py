@@ -96,7 +96,7 @@ user_update_email_responses = {
 }
 
 user_confirm_email_responses = {
-    200: {"model": UserMessage, "description": "Email confirmado e alterado"},
+    200: {"model": UserMessage, "description": "Email confirmado e atualizado"},
     400: {"model": MessageError, "description": "Token inválido"},
     403: {"model": MessageError, "description": "Sem permissão"},
     404: {"model": MessageError, "description": "Usuário não encontrado"},
@@ -168,8 +168,9 @@ async def update_user (request: Request, response: Response, body: UpdateUser, s
 async def update_password (response: Response, body: UpdatePasswordUser, service: User_Service = Depends(get_user_service),
                             current_user: dict = Depends(get_current_user)):
     
-    await service.update_password(body, current_user.get("email"))
-    clear_tokens_cookies(response)
+    result = await service.update_password(body, current_user.get("email"))
+    set_access_token_cookie(response, result.get("access_token"))
+    set_refresh_token_cookie(response, result.get("refresh_token"))
 
 
 @user_router.delete(path = "", 
@@ -228,7 +229,9 @@ async def update_email (request: Request, body: UpdateEmailUser, service: User_S
 async def confirm_email (request: Request, response: Response, token: str, service: User_Service = Depends(get_user_service),
                          current_user: dict = Depends(get_current_user)):
 
-    await service.confirm_email(token, current_user.get("email"))
-    clear_tokens_cookies(response)
-    return {"message": "Email confirmado e alterado com sucesso"}
+    result = await service.confirm_email(token, current_user.get("email"))
+    set_access_token_cookie(response, result.get("access_token"))
+    set_refresh_token_cookie(response, result.get("refresh_token"))
+    return {"message": "Email confirmado e atualizado com sucesso"}
+
 

@@ -132,8 +132,16 @@ class User_Service:
                 raise Unauthorized(detail = "Credencias inválidas")
             
             await self.repository.update_password(schema.new_password, user)
+
+            access_token = create_access_token(user.id, user.name, user.email, user.phone, user.role)
+            refresh_token = create_refresh_token(user.id, user.name, user.email, user.phone, user.role)
+            
             logger.info("Password updated successfully for user: %s", email)
-            return None
+
+            return {
+                "access_token": access_token,
+                "refresh_token": refresh_token,
+            }
 
         except HTTPException:
             raise
@@ -281,8 +289,16 @@ class User_Service:
                 raise NotFound(register = email)
             
             await self.repository.update_email_confirm(user, new_email)
+
+            access_token = create_access_token(user.id, user.name, user.email, user.phone, user.role)
+            refresh_token = create_refresh_token(user.id, user.name, user.email, user.phone, user.role)
+
             logger.info("Email updated successfully from %s to %s", email, new_email)
-            return None
+
+            return {
+                "access_token": access_token,
+                "refresh_token": refresh_token,
+            }
                 
         except HTTPException:
             raise
