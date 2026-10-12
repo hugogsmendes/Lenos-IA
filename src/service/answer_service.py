@@ -68,11 +68,11 @@ class Answer_Service:
             result = [
                 {
                     "question_id": question_id,
-                    "question": description,
+                    "question": question,
                     "answer_id": answer_id,
                     "answer": answer,
                 }
-            for question_id, description, answer_id, answer in answers]
+            for question_id, question, answer_id, answer in answers]
 
             await self.repository.cache.set(user_answers_key, json.dumps(result, default = str), ex = 3600)
 

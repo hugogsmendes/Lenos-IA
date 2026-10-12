@@ -7,7 +7,7 @@ from uuid import UUID
 
 class Answer_Repository:
 
-    def __init__(self, session: AsyncSession, cache: Redis):
+    def __init__(self, session: AsyncSession, cache: Redis | None = None):
         self.session = session
         self.cache = cache
         self.cache_key = "answers"

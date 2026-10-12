@@ -33,7 +33,7 @@ _EMOJI_PATTERN = re.compile(
 
 class Comment_Service:
 
-    def __init__(self, repository: Comment_Repository):
+    def __init__(self, repository: Comment_Repository | None = None):
         self.repository = repository
 
     async def get_channel_id_title_by_video_id (self, youtube_service, video_id: str):
