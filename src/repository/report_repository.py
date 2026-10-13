@@ -99,7 +99,7 @@ class Report_Repository:
 
     async def update_report_done_by_id (self, report_id: UUID, prompt: str, title: str, markdown: str, comments_processed: int, 
                                         comments_positive: int, comments_negative: int,
-                                        recurring_themes: list | None, recommendations: list | None) -> None:
+                                        recurring_themes: list, recommendations: list) -> None:
 
         query = update(Report).filter(Report.id == report_id).values(prompt = prompt,
                                                                      title = title,
