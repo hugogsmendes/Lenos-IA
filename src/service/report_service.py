@@ -20,7 +20,6 @@ from pathlib import Path
 import json
 import re
 import asyncio
-import httpx
 from datetime import date
 
 logger = get_logger("report_service")
@@ -59,6 +58,7 @@ class Report_Service:
         with open(path, "r", encoding="utf-8") as file:
             prompt_content = file.read()
 
+        logger.info("Prompt loaded successfully from %s (%s characters)", path, len(prompt_content))
         return prompt_content
 
     def load_pdf_part(self, file_path: Path | str = VADER_PDF_PATH) -> types.Part | None:
@@ -70,13 +70,14 @@ class Report_Service:
             if fallback.is_file():
                 path = fallback
             else:
-                logger.warning("PDF file not found at %s. Proceeding without PDF context.", path)
+                logger.warning("PDF file not found at %s or %s. Proceeding without PDF context.", path, fallback)
                 return None
 
         try:
             with open(path, "rb") as f:
                 pdf_bytes = f.read()
 
+            logger.info("PDF loaded successfully from %s (%.2f KB) as multimodal Part", path, len(pdf_bytes) / 1024)
             return types.Part.from_bytes(
                 data = pdf_bytes,
                 mime_type = "application/pdf"
