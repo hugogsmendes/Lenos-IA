@@ -199,8 +199,9 @@ class Report_Service:
                         "answer": answer,
                     }
                 for question_id, question, answer_id, answer in answers_by_user]
-
-                report_dict = await self.analyze_comments(comments_processed, creator_context)
+                
+                prompt = self.load_prompt()
+                report_dict = await self.analyze_comments(comments_processed, creator_context, prompt)
 
                 if not report_dict:
                     logger.error("Background Task: Gemini analysis failed for report %s", report_id)
@@ -214,7 +215,7 @@ class Report_Service:
                 recommendations = report_dict.get("recommendations")
 
                 await analysis_repository.update_analysis_done_by_id(analysis_id)
-                await repository.update_report_done_by_id(report_id, self.load_prompt(), title, markdown, len(comments_processed),
+                await repository.update_report_done_by_id(report_id, prompt, title, markdown, len(comments_processed),
                                                               comments_positive, comments_negative, comments_neutral, recurring_themes, recommendations)
                 await session.commit()
                 logger.info("Background Task: Report %s successfully generated and saved", report_id)
@@ -243,7 +244,7 @@ class Report_Service:
                     logger.error("Background Task: Failed to persist failure state for report_id %s", report_id, exc_info=True)
                 return
         
-    async def analyze_comments (self, comments: list, creator_context: list[dict]) -> dict:
+    async def analyze_comments (self, comments: list, creator_context: list[dict], prompt: str) -> dict:
 
         try:
             logger.info("Sending %s comments to Gemini API for analysis", len(comments))
@@ -258,7 +259,7 @@ class Report_Service:
             response = await self.gemini_service.aio.models.generate_content(
                 model = self.model,
                 config = types.GenerateContentConfig(
-                    system_instruction = self.load_prompt(),
+                    system_instruction = prompt,
                     temperature = 0.2,
                     max_output_tokens = 6000,
                     response_mime_type = "application/json"
