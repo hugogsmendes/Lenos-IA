@@ -29,6 +29,7 @@ logger = get_logger("report_service")
 GEMINI_API_KEY = settings.GEMINI_API_KEY
 REPORT_MONTHLY_LIMIT = 5
 PROMPT_FILE_PATH = Path(__file__).resolve().parent.parent.parent / "prompt.md"
+VADER_PDF_PATH = Path(__file__).resolve().parent.parent.parent / "vader.pdf"
 
 class Report_Service:
 
@@ -41,7 +42,7 @@ class Report_Service:
         self.analysis_service = analysis_service
         self.gemini_service = genai.Client(api_key = GEMINI_API_KEY)
         self.model = "gemini-2.5-flash-lite"
-        self.url = "https://ojs.aaai.org/index.php/ICWSM/article/view/14550/14399"
+        self.pdf_path = VADER_PDF_PATH
 
     def load_prompt(self, file_path: Path | str = PROMPT_FILE_PATH) -> str:
         """Lê o arquivo prompt.md, extrai seu conteúdo e retorna o texto para a requisição de análise."""
@@ -59,6 +60,30 @@ class Report_Service:
             prompt_content = file.read()
 
         return prompt_content
+
+    def load_pdf_part(self, file_path: Path | str = VADER_PDF_PATH) -> types.Part | None:
+        """Lê o arquivo PDF local e retorna uma Part multimodal para a requisição de análise."""
+
+        path = Path(file_path)
+        if not path.is_file():
+            fallback = Path("vader.pdf").resolve()
+            if fallback.is_file():
+                path = fallback
+            else:
+                logger.warning("PDF file not found at %s. Proceeding without PDF context.", path)
+                return None
+
+        try:
+            with open(path, "rb") as f:
+                pdf_bytes = f.read()
+
+            return types.Part.from_bytes(
+                data = pdf_bytes,
+                mime_type = "application/pdf"
+            )
+        except Exception as e:
+            logger.error("Failed to read PDF file at %s: %s", path, str(e), exc_info=True)
+            return None
 
 
     async def create_report (self, schema: GenerateReport, user_id: str, background_tasks: BackgroundTasks):
@@ -226,6 +251,8 @@ class Report_Service:
                 f"- Pergunta: {item.get('question')}\n  Resposta: {item.get('answer')}"
                 for item in (creator_context or [])
             )
+            pdf_part = self.load_pdf_part()
+    
 
             response = await self.gemini_service.aio.models.generate_content(
                 model = self.model,
@@ -235,12 +262,15 @@ class Report_Service:
                     max_output_tokens = 6000,
                     response_mime_type = "application/json"
                 ),
-                contents=f"""
+                contents =f"""
                     CONTEXTO_DO_CRIADOR:
                     {formatted_creator_context}
 
                     COMENTARIOS_DO_VIDEO:
                     {content_for_gemini}
+
+                    METODOLOGIA:
+                    {pdf_part}
                 """
             )
             logger.info("Gemini API response received successfully")
