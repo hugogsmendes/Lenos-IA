@@ -20,6 +20,7 @@ from pathlib import Path
 import json
 import re
 import asyncio
+import httpx
 from datetime import date
 
 logger = get_logger("report_service")
@@ -40,6 +41,7 @@ class Report_Service:
         self.analysis_service = analysis_service
         self.gemini_service = genai.Client(api_key = GEMINI_API_KEY)
         self.model = "gemini-2.5-flash-lite"
+        self.url = "https://ojs.aaai.org/index.php/ICWSM/article/view/14550/14399"
 
     def load_prompt(self, file_path: Path | str = PROMPT_FILE_PATH) -> str:
         """Lê o arquivo prompt.md, extrai seu conteúdo e retorna o texto para a requisição de análise."""
@@ -181,12 +183,13 @@ class Report_Service:
                 markdown = report_dict.get("markdown")
                 comments_positive = report_dict.get("comments_positive")
                 comments_negative = report_dict.get("comments_negative")
+                comments_neutral = report_dict.get("comments_neutral")
                 recurring_themes = report_dict.get("recurring_themes")
                 recommendations = report_dict.get("recommendations")
 
                 await analysis_repository.update_analysis_done_by_id(analysis_id)
                 await repository.update_report_done_by_id(report_id, self.load_prompt(), title, markdown, len(comments_processed),
-                                                              comments_positive, comments_negative, recurring_themes, recommendations)
+                                                              comments_positive, comments_negative, comments_neutral, recurring_themes, recommendations)
                 await session.commit()
                 logger.info("Background Task: Report %s successfully generated and saved", report_id)
 
@@ -270,6 +273,7 @@ class Report_Service:
                 "comments_processed": report.comments_processed,
                 "comments_positive": report.comments_positive,
                 "comments_negative": report.comments_negative,
+                "comments_neutral": report.comments_neutral,
                 "recurring_themes": report.recurring_themes,
                 "recommendations": report.recommendations,
                 "created_at": report.created_at
@@ -311,11 +315,13 @@ class Report_Service:
                     "comments_processed": comments_processed,
                     "comments_positive": comments_positive,
                     "comments_negative": comments_negative,
+                    "comments_neutral": comments_neutral,
                     "recurring_themes": recurring_themes,
                     "recommendations": recommendations,
                     "created_at": created_at
                 }
-            for id, title, url, markdown, status, comments_processed, comments_positive, comments_negative, recurring_themes, recommendations, created_at in reports]
+            for id, title, url, markdown, status, comments_processed, comments_positive, comments_negative, comments_neutral, 
+                recurring_themes, recommendations, created_at in reports]
 
             result = {
                 "result": result_reports,
@@ -323,7 +329,8 @@ class Report_Service:
                         "count": stats.reports_count,
                         "comments_processed": stats.comments_processed,
                         "comments_positive": stats.comments_positive,
-                        "comments_negative": stats.comments_negative
+                        "comments_negative": stats.comments_negative,
+                        "comments_neutral": stats.comments_neutral
                     }
             }
 

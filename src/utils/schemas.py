@@ -268,6 +268,7 @@ class ResponseReport (BaseModel):
     comments_processed: int | None
     comments_positive: int | None
     comments_negative: int | None
+    comments_neutral: int | None
     recurring_themes: list[RecurringThemes]
     recommendations: list[Recommendations]
     created_at: datetime
@@ -278,6 +279,7 @@ class ReportStats (BaseModel):
     comments_processed: int
     comments_positive: int
     comments_negative: int
+    comments_neutral: int
 
 class ResponseReportStats (BaseModel):
 

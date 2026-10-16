@@ -27,8 +27,8 @@ class Report_Repository:
 
         query = (
             select(Report.id, Report.title, Analysis.video_url, Report.markdown, Analysis.status, 
-                    Report.comments_processed, Report.comments_positive, Report.comments_negative,
-                    Report.recurring_themes, Report.recommendations, Report.created_at)
+                    Report.comments_processed, Report.comments_positive, Report.comments_negative, 
+                    Report.comments_neutral, Report.recurring_themes, Report.recommendations, Report.created_at)
             .join(Report.analysis)
             .filter(
                 Analysis.user_id == user_id,
@@ -59,6 +59,9 @@ class Report_Repository:
                 func.coalesce(
                     func.sum(Report.comments_negative), 0
                 ).label("comments_negative"),
+                func.coalesce(
+                    func.sum(Report.comments_neutral), 0
+                ).label("comments_neutral")
             )
             .select_from(Report)
             .join(Report.analysis)
@@ -98,7 +101,7 @@ class Report_Repository:
         await self.session.refresh(report)
 
     async def update_report_done_by_id (self, report_id: UUID, prompt: str, title: str, markdown: str, comments_processed: int, 
-                                        comments_positive: int, comments_negative: int,
+                                        comments_positive: int, comments_negative: int, comments_neutral: int,
                                         recurring_themes: list, recommendations: list) -> None:
 
         query = update(Report).filter(Report.id == report_id).values(prompt = prompt,
@@ -107,6 +110,7 @@ class Report_Repository:
                                                                      comments_processed = comments_processed,
                                                                      comments_positive = comments_positive,
                                                                      comments_negative = comments_negative,
+                                                                     comments_neutral = comments_neutral,
                                                                      recurring_themes = recurring_themes,
                                                                      recommendations = recommendations)
         await self.session.execute(query)
@@ -119,6 +123,7 @@ class Report_Repository:
                                                                      comments_processed = 0,
                                                                      comments_positive = 0,
                                                                      comments_negative = 0,
+                                                                     comments_neutral = 0,
                                                                      recurring_themes = [],
                                                                      recommendations = [])
         await self.session.execute(query)

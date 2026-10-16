@@ -23,6 +23,7 @@ class Report (Base):
     comments_processed: Mapped[int] = mapped_column(Integer, nullable = True)
     comments_positive: Mapped[int] = mapped_column(Integer, nullable = True)
     comments_negative: Mapped[int] = mapped_column(Integer, nullable = True)
+    comments_neutral: Mapped[int] = mapped_column(Integer, nullable = True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone = True), server_default = func.now(), nullable = False)
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone = True),
