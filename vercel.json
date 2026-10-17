@@ -4,7 +4,7 @@
       "src": "src/app/main.py",
       "use": "@vercel/python",
       "config": {
-        "includeFiles": ["prompt.md", "vader.pdf"]
+        "includeFiles": ["prompt.md", "chen.pdf"]
       }
     }
   ],

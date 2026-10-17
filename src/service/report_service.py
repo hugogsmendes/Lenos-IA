@@ -28,7 +28,7 @@ logger = get_logger("report_service")
 GEMINI_API_KEY = settings.GEMINI_API_KEY
 REPORT_MONTHLY_LIMIT = 5
 PROMPT_FILE_PATH = Path(__file__).resolve().parent.parent.parent / "prompt.md"
-VADER_PDF_PATH = Path(__file__).resolve().parent.parent.parent / "vader.pdf"
+CHEN_PDF_PATH = Path(__file__).resolve().parent.parent.parent / "chen.pdf"
 
 class Report_Service:
 
@@ -41,7 +41,6 @@ class Report_Service:
         self.analysis_service = analysis_service
         self.gemini_service = genai.Client(api_key = GEMINI_API_KEY)
         self.model = "gemini-2.5-flash-lite"
-        self.pdf_path = VADER_PDF_PATH
 
     def load_prompt(self, file_path: Path | str = PROMPT_FILE_PATH) -> str:
         """Lê o arquivo prompt.md, extrai seu conteúdo e retorna o texto para a requisição de análise."""
@@ -61,7 +60,7 @@ class Report_Service:
         logger.info("Prompt loaded successfully from %s (%s characters)", path, len(prompt_content))
         return prompt_content
 
-    def load_pdf_part(self, file_path: Path | str = VADER_PDF_PATH) -> types.Part | None:
+    def load_pdf_part(self, file_path: Path | str = CHEN_PDF_PATH) -> types.Part | None:
         """Lê o arquivo PDF local e retorna uma Part multimodal para a requisição de análise."""
 
         path = Path(file_path)
